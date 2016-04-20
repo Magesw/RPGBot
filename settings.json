@@ -1,0 +1,13 @@
+{
+	"bot": {
+		"email": "",
+		"pass": "",
+		"token": ""
+	},
+	"prefix": {
+		"main": "#!",
+		"botname": true
+	},
+	"version": "0.1",
+	"owner": "141610251299454976"
+}

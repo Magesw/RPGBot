@@ -1,0 +1,175 @@
+{
+	"maxlevel": 4,
+	"level-1": {
+		"level": 1,
+		"mobs": {
+			"1": {
+				"name": "Ogre",
+				"dmg": {
+					"min": 1,
+					"max": 3
+				},
+				"hp": 40,
+				"maxhp": 40,
+				"drops": {
+					"gold": {
+						"min": 5,
+						"max": 10
+					},
+					"xp": {
+						"min": 2,
+						"max": 5
+					}
+				}
+			},
+			"2": {
+				"name": "Kloid",
+				"dmg": {
+					"min": 1,
+					"max": 3
+				},
+				"hp": 40,
+				"maxhp": 40,
+				"drops": {
+					"gold": {
+						"min": 5,
+						"max": 10
+					},
+					"xp": {
+						"min": 2,
+						"max": 5
+					}
+				}
+			}
+		}
+	},
+	"level-2": {
+		"level": 2,
+		"mobs": {
+			"1": {
+				"name": "Zulp",
+				"dmg": {
+					"min": 2,
+					"max": 5
+				},
+				"hp": 80,
+				"maxhp": 80,
+				"drops": {
+					"gold": {
+						"min": 5,
+						"max": 15
+					},
+					"xp": {
+						"min": 5,
+						"max": 10
+					}
+				}
+			},
+			"2": {
+				"name": "Zerp",
+				"dmg": {
+					"min": 2,
+					"max": 5
+				},
+				"hp": 80,
+				"maxhp": 80,
+				"drops": {
+					"gold": {
+						"min": 5,
+						"max": 15
+					},
+					"xp": {
+						"min": 5,
+						"max": 10
+					}
+				}
+			}
+		}
+	},
+	"level-3": {
+		"level": 3,
+		"mobs": {
+			"1": {
+				"name": "Syrp",
+				"dmg": {
+					"min": 5,
+					"max": 8
+				},
+				"hp": 135,
+				"maxhp": 135,
+				"drops": {
+					"gold": {
+						"min": 15,
+						"max": 30
+					},
+					"xp": {
+						"min": 10,
+						"max": 20
+					}
+				}
+			},
+			"2": {
+				"name": "Zarth",
+				"dmg": {
+					"min": 5,
+					"max": 8
+				},
+				"hp": 135,
+				"maxhp": 135,
+				"drops": {
+					"gold": {
+						"min": 15,
+						"max": 30
+					},
+					"xp": {
+						"min": 10,
+						"max": 20
+					}
+				}
+			}
+		}
+	},
+	"level-4": {
+		"level": 4,
+		"mobs": {
+			"1": {
+				"name": "Ulgrth",
+				"dmg": {
+					"min": 7,
+					"max": 10
+				},
+				"hp": 185,
+				"maxhp": 185,
+				"drops": {
+					"gold": {
+						"min": 25,
+						"max": 40
+					},
+					"xp": {
+						"min": 15,
+						"max": 30
+					}
+				}
+			},
+			"2": {
+				"name": "Lurght",
+				"dmg": {
+					"min": 7,
+					"max": 10
+				},
+				"hp": 185,
+				"maxhp": 185,
+				"drops": {
+					"gold": {
+						"min": 25,
+						"max": 40
+					},
+					"xp": {
+						"min": 15,
+						"max": 30
+					}
+				}
+			}
+		}
+	}
+}

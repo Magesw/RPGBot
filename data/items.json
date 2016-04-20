@@ -1,0 +1,83 @@
+{
+	"1": {
+		"name": "Health Potion",
+		"prefix": "a",
+		"desc": "Heals an adventurer 50HP",
+		"type": "potion",
+		"potion": {
+			"heal": 50
+		},
+		"cost": 5,
+		"level": 1,
+		"image": "items/health-potion.png"
+	},
+	"2": {
+		"name": "Small Dagger",
+		"prefix": "a",
+		"desc": "A small basic dagger",
+		"type": "weapon",
+		"weapon": {
+			"dmg": {
+				"min": 1,
+				"max": 5
+			}
+		},
+		"cost": -1,
+		"level": 1,
+		"image": "items/small-dagger.png"
+	},
+	"3": {
+		"name": "Iron Sword",
+		"prefix": "a",
+		"desc": "A bent iron sword",
+		"type": "weapon",
+		"weapon": {
+			"dmg": {
+				"min": 2,
+				"max": 6
+			}
+		},
+		"cost": 100,
+		"level": 2,
+		"image": "items/iron-sword.png"
+	},
+	"4": {
+		"name": "Dummy item",
+		"prefix": "a",
+		"desc": "This really doesn't do anything..",
+		"type": "dummy",
+		"cost": 1,
+		"level": 1
+	},
+	"5": {
+		"name": "Iron Mace",
+		"prefix": "a",
+		"desc": "A mace made from iron.",
+		"type": "weapon",
+		"weapon": {
+			"dmg": {
+				"min": 5,
+				"max": 10
+			}
+		},
+		"cost": 500,
+		"level": 3,
+		"image": "items/iron-mace.png"
+	},
+	"6": {
+		"name": "Strength Potion",
+		"prefix": "a",
+		"desc": "Grants the user a temporary increase in strength.",
+		"type": "potion",
+		"potion": {
+			"boost": {
+				"strength": "1.25"
+			},
+			"temp": true,
+			"last": 3
+		},
+		"cost": 50,
+		"level": 3,
+		"image": "items/strength-potion.png"
+	}
+}
