@@ -1,0 +1,6 @@
+{
+  "name": "RPGBot",
+  "tagline": "A RPG Bot for Discord.",
+  "body": "# RPGBot\r\nA RPG Bot for Discord.\r\n\r\n## Using the bot\r\n\r\nTo use the bot, you'll have to first invite it to your Discord server. You can do that by clicking [here](https://discordapp.com/oauth2/authorize?&client_id=170915256833540097&scope=bot&permissions=0).\r\n\r\n### Commands\r\n\r\nAll commands are prefixed with ``#!``, ``@DiscordRPG`` or ``DiscordRPG``\r\n\r\nFor example, ``#!help`` shows ``Hi! I'm DiscordRPG! For a list of the commands I recognize, you can type #!commands, DiscordRPG commands or @DiscordRPG commands``",
+  "note": "Don't delete this file! It's used internally to help with page regeneration."
+}
