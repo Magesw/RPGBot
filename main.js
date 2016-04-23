@@ -1,21 +1,3 @@
-/*
-
- Copyright Mackan90096 and Sven65 [thormax5@gmail.com]
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
-*/
-
 var Discord = require("discord.js");
 var fs = require("fs");
 var chalk = require('chalk');
@@ -29,15 +11,25 @@ var defaults = require("./cmds/defaults.js").defaults;
 
 var commands = extend({}, defaults);
 
-console.log(commands);
-
 var stdin = process.openStdin();
+
+var srvs = 0;
+
+var cmdIndex = [];
+var cmdUsage = [];
+
+function cmUsage(cmd){
+	if(cmdIndex.indexOf(cmd) > -1){
+		cmdUsage[cmdIndex.indexOf(cmd)]++;
+	}else{
+		cmdIndex.push(cmd);
+		cmdUsage.push(1);
+	}
+}
 
 var lastExecTime = {};
 setInterval(function(){ 
-	lastExecTime = {}; 
-
-	var data = {"key": "", "servercount": mybot.servers.length};
+	var data = {"key": "mackan92bb389fc9e1aa28", "servercount": mybot.servers.length};
 
 	request({
 	    url: "https://www.carbonitex.net/discord/data/botdata.php",
@@ -49,13 +41,30 @@ setInterval(function(){
     	body: JSON.stringify(data)
 	}, function(err){
 		if(err){ mybot.sendMessage(settings["owner"], err); return;}
-		mybot.sendMessage(settings["owner"], "Sent data.");
+		var msg = "Sent data.\n";
+			msg += "Server count: "+mybot.servers.length+"\n";
+
+		if(mybot.servers.length > srvs){
+			msg += "(+ "+mybot.servers.length-srvs+")";
+		}else if(mybot.servers.length < srvs){
+			msg += "(- "+((mybot.servers.length-srvs)*-1)+")";
+		}else{
+			msg += "(+/- 0)";
+		}
+
+		mybot.sendMessage(settings["owner"], msg);
+		srvs = mybot.servers.length;
+
 	});
 
 
 	
 },3600000);
 
+
+setInterval(function(){
+	lastExecTime = {};
+}, 36000000);
 
 var firstTime = {};
 
@@ -122,23 +131,24 @@ mybot.on("message", function(message){
 							var code = args.splice(1, args.length).join(" ");
 							msg += "```js\n"+eval(code)+"```";
 						}
-						bot.sendMessage(message, msg);
+						mybot.sendMessage(message, msg);
 					}catch(e){
-						bot.sendMessage(message, "```js\n"+e+"```");
+						mybot.sendMessage(message, "```js\n"+e+"```");
 					}
 				}else{
-					console.log("fuck you");
+					console.log("bleh");
 				}
 			}else if(args[0] == settings["prefix"]["main"]+"bstats"){
 
 				if(message.author.id == settings["owner"]){
 
 					try{
-						var head = "======== ["+mybot.user.name+" Stats] ========\n";
-						var msg = head+"\n";
+						var head = "!======== ["+mybot.user.name+" Stats] ========!\n";
+						var msg = "```diff\n"+head+"\n";
 
 						var large = 0;
 						var text = 0;
+						var commandUsage = 0;
 
 						for(i=0;i<mybot.servers.length;i++){
 							if(mybot.servers[i].members.length >= 250){
@@ -152,12 +162,28 @@ mybot.on("message", function(message){
 							}
 						}
 
-						msg += "Connected to "+large+" large servers and "+(mybot.servers.length-large)+" small servers.\n";
-						msg += "In total, there's "+text+" text channels and "+mybot.privateChannels.length+" private channels.\n";
-						msg += "There's "+mybot.users.length+" users in the cache.\n";
-						msg += "Using a total of "+(process.memoryUsage().rss/1024/1000).toFixed(2)+"MB of memory.";
 
-						console.log(msg);
+
+						for(i=0;i<cmdUsage.length;i++){
+							commandUsage = commandUsage+cmdUsage[i];
+						}
+
+						msg += "+ Connected to "+large+" large servers and "+(mybot.servers.length-large)+" small servers.\n";
+						msg += "+ In total, there's "+text+" text channels and "+mybot.privateChannels.length+" private channels.\n";
+						msg += "+ There's "+mybot.users.length+" users in the cache.\n";
+						msg += "+ Using a total of "+(process.memoryUsage().rss/1024/1000).toFixed(2)+"MB of memory.\n";
+						msg += "+ There's been "+commandUsage+" commands used. ("+(commandUsage/(Math.round(mybot.uptime / 60000))).toFixed(2)+"/minute)\n";
+						msg += "+ Globally, "+Object.keys(require("./data/users.json")).length+" users have started their adventure.\n";
+						msg += "+ There's a total of "+Object.keys(require("./data/guilds.json")).length+" guilds globally.\n";
+						msg += "+ There's "+Object.keys(require("./data/adventures.json")).length+" adventures right now.";
+
+						var tmpm = "";
+
+						for(i=0;i<head.length-2;i++){
+							tmpm += "=";
+						}
+
+						msg += "\n!"+tmpm+"!```";
 
 						mybot.sendMessage(message, msg);
 					}catch(e){
@@ -177,18 +203,70 @@ mybot.on("message", function(message){
 					cmd = args[0].replace(settings['prefix']['main'], "").toLowerCase();
 				}
 
-				console.log(args);
 				var index = Object.keys(commands).indexOf(cmd);
 
 				if(index > -1){
-					commands[cmd].process(args, message, mybot);
+
+					var now = new Date().valueOf();
+					if(!lastExecTime.hasOwnProperty(cmd)){
+						lastExecTime[cmd] = {};
+					}
+
+					if(!lastExecTime[cmd].hasOwnProperty(message.author.id)){
+						lastExecTime[cmd][message.author.id] = new Date().valueOf();
+					}
+
+					if(message.author.id != settings["owner"]){
+						if(commands[cmd].cooldown > 120){
+							if((now/10) < (lastExecTime[cmd][message.author.id]+(commands[cmd].cooldown*1000)/10) && firstTime[cmd].hasOwnProperty(message.author.id)){
+								if(Math.round(((lastExecTime[cmd][message.author.id] + commands[cmd].cooldown * 1000) - now) / 1000) > 0){
+									console.log("meh");
+									mybot.sendMessage(message, "Young warrior "+message.author.name.replace(/@/g, '@\u200b')+"!, Please wait! "+Math.round(((lastExecTime[cmd][message.author.id] + commands[cmd].cooldown * 1000) - now) / 1000) + " seconds", function(e, m){ mybot.deleteMessage(m, {"wait": 6000}); });
+									if (!message.channel.isPrivate) mybot.deleteMessage(message, {"wait": 10000});
+									return;
+								}else{
+									console.log("bleh");
+									cmUsage(cmd);
+									commands[cmd].process(args, message, mybot);
+									lastExecTime[cmd][message.author.id] = now;
+									firstTime[cmd][message.author.id] = true;
+								}
+							}else{
+								console.log("bleh");
+								cmUsage(cmd);
+								commands[cmd].process(args, message, mybot);
+								lastExecTime[cmd][message.author.id] = now;
+								firstTime[cmd][message.author.id] = true;
+							}
+						}else{
+							if(now < lastExecTime[cmd][message.author.id]+commands[cmd].cooldown*1000 && firstTime[cmd].hasOwnProperty(message.author.id)){
+							
+								console.log("meh");
+								mybot.sendMessage(message, "Young warrior "+message.author.name.replace(/@/g, '@\u200b')+"!, Please wait! "+Math.round(((lastExecTime[cmd][message.author.id] + commands[cmd].cooldown * 1000) - now) / 1000) + " seconds", function(e, m){ mybot.deleteMessage(m, {"wait": 6000}); });
+								if (!message.channel.isPrivate) mybot.deleteMessage(message, {"wait": 10000});
+								return;
+							}else{
+								console.log("bleh");
+								cmUsage(cmd);
+								commands[cmd].process(args, message, mybot);
+								lastExecTime[cmd][message.author.id] = now;
+								firstTime[cmd][message.author.id] = true;
+							}
+						}
+					}else{
+						cmUsage(cmd);
+						commands[cmd].process(args, message, mybot);
+					}
+
+					
+					//commands[cmd].process(args, message, mybot);
 				}
 			}
 		}
 	}catch(e){
     	console.log(chalk.red(e.stack));
 	}
-} );
+});
 
 init();
 
@@ -203,7 +281,9 @@ mybot.on("warn", function(warn){
 mybot.on("ready", function(){
 	console.log(chalk.green("Ready."));
 	mybot.setPlayingGame("Type #!stats to start your adventure!");
-	var data = {"key": "", "servercount": mybot.servers.length};
+	var data = {"key": "mackan92bb389fc9e1aa28", "servercount": mybot.servers.length};
+
+	var srvs = mybot.servers.length;
 
 	request({
 	    url: "https://www.carbonitex.net/discord/data/botdata.php",
@@ -215,7 +295,7 @@ mybot.on("ready", function(){
     	body: JSON.stringify(data)
 	}, function(err){
 		if(err){ mybot.sendMessage(settings["owner"], err); return;}
-		mybot.sendMessage(settings["owner"], "Sent data.");
+		mybot.sendMessage(settings["owner"], "Sent data.\nServers: "+srvs);
 	});
 });
 
@@ -223,6 +303,6 @@ mybot.on("serverCreated", function(server){
 	console.log("Joined server: "+server.name);
 });
 
-stdin.addListener("data", function(d) {
-    mybot.sendMessage(mybot.channels[0], d.toString().trim());
+stdin.addListener("data", function(d){
+    mybot.sendMessage(mybot.channels, d.toString().trim());
 });

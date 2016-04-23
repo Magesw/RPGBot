@@ -79,5 +79,50 @@
 		"cost": 50,
 		"level": 3,
 		"image": "items/strength-potion.png"
+	},
+	"7": {
+		"name": "Iron Flail",
+		"prefix": "a",
+		"desc": "A spike ball hanging from a stick.",
+		"type": "weapon",
+		"weapon": {
+			"dmg": {
+				"min": 7,
+				"max": 12
+			}
+		},
+		"cost": 750,
+		"level": 4,
+		"image": "items/flail.png"
+	},
+	"8": {
+		"name": "Iron Battleaxe",
+		"prefix": "a",
+		"desc": "A two-headed axe.",
+		"type": "weapon",
+		"weapon": {
+			"dmg": {
+				"min": 10,
+				"max": 15
+			}
+		},
+		"cost": 2500,
+		"level": 7,
+		"image": "items/battleaxe.png"
+	},
+	"9": {
+		"name": "Golden Hammer",
+		"prefix": "a",
+		"desc": "A hammer with a golden shell.",
+		"type": "weapon",
+		"weapon": {
+			"dmg": {
+				"min": 13,
+				"max": 18
+			}
+		},
+		"cost": 4500,
+		"level": 10,
+		"image": "items/hammer.png"
 	}
 }

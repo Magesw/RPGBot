@@ -1,5 +1,5 @@
 {
-	"maxlevel": 4,
+	"maxlevel": 20,
 	"level-1": {
 		"level": 1,
 		"mobs": {
@@ -167,6 +167,694 @@
 					"xp": {
 						"min": 15,
 						"max": 30
+					}
+				}
+			}
+		}
+	},
+	"level-5": {
+		"level": 5,
+		"mobs": {
+			"1": {
+				"name": "Zeil",
+				"dmg": {
+					"min": 8,
+					"max": 12
+				},
+				"hp": 200,
+				"maxhp": 200,
+				"drops": {
+					"gold": {
+						"min": 25,
+						"max": 45
+					},
+					"xp": {
+						"min": 15,
+						"max": 35
+					}
+				}
+			},
+			"2": {
+				"name": "Leirgth",
+				"dmg": {
+					"min": 8,
+					"max": 12
+				},
+				"hp": 200,
+				"maxhp": 200,
+				"drops": {
+					"gold": {
+						"min": 25,
+						"max": 45
+					},
+					"xp": {
+						"min": 15,
+						"max": 35
+					}
+				}
+			}
+		}
+	},
+	"level-6": {
+		"level": 6,
+		"mobs": {
+			"1": {
+				"name": "Ploirgh",
+				"dmg": {
+					"min": 10,
+					"max": 13
+				},
+				"hp": 225,
+				"maxhp": 225,
+				"drops": {
+					"gold": {
+						"min": 30,
+						"max": 50
+					},
+					"xp": {
+						"min": 20,
+						"max": 40
+					}
+				}
+			},
+			"2": {
+				"name": "Plirgh",
+				"dmg": {
+					"min": 10,
+					"max": 13
+				},
+				"hp": 225,
+				"maxhp": 225,
+				"drops": {
+					"gold": {
+						"min": 30,
+						"max": 50
+					},
+					"xp": {
+						"min": 20,
+						"max": 40
+					}
+				}
+			}
+		}
+	},
+	"level-7": {
+		"level": 7,
+		"mobs": {
+			"1": {
+				"name": "Hulp",
+				"dmg": {
+					"min": 11,
+					"max": 15
+				},
+				"hp": 250,
+				"maxhp": 250,
+				"drops": {
+					"gold": {
+						"min": 30,
+						"max": 50
+					},
+					"xp": {
+						"min": 20,
+						"max": 45
+					}
+				}
+			},
+			"2": {
+				"name": "Hylf",
+				"dmg": {
+					"min": 11,
+					"max": 15
+				},
+				"hp": 250,
+				"maxhp": 250,
+				"drops": {
+					"gold": {
+						"min": 30,
+						"max": 50
+					},
+					"xp": {
+						"min": 20,
+						"max": 45
+					}
+				}
+			}
+		}
+	},
+	"level-8": {
+		"level": 8,
+		"mobs": {
+			"1": {
+				"name": "Serth",
+				"dmg": {
+					"min": 12,
+					"max": 16
+				},
+				"hp": 300,
+				"maxhp": 300,
+				"drops": {
+					"gold": {
+						"min": 40,
+						"max": 60
+					},
+					"xp": {
+						"min": 30,
+						"max": 50
+					}
+				}
+			},
+			"2": {
+				"name": "Sirph",
+				"dmg": {
+					"min": 12,
+					"max": 16
+				},
+				"hp": 300,
+				"maxhp": 300,
+				"drops": {
+					"gold": {
+						"min": 40,
+						"max": 60
+					},
+					"xp": {
+						"min": 30,
+						"max": 50
+					}
+				}
+			}
+		}
+	},
+	"level-9": {
+		"level": 9,
+		"mobs": {
+			"1": {
+				"name": "Blith",
+				"dmg": {
+					"min": 13,
+					"max": 18
+				},
+				"hp": 310,
+				"maxhp": 310,
+				"drops": {
+					"gold": {
+						"min": 45,
+						"max": 65
+					},
+					"xp": {
+						"min": 35,
+						"max": 55
+					}
+				}
+			},
+			"2": {
+				"name": "Bleght",
+				"dmg": {
+					"min": 13,
+					"max": 18
+				},
+				"hp": 310,
+				"maxhp": 310,
+				"drops": {
+					"gold": {
+						"min": 45,
+						"max": 65
+					},
+					"xp": {
+						"min": 35,
+						"max": 55
+					}
+				}
+			}
+		}
+	},
+	"level-10": {
+		"level": 10,
+		"mobs": {
+			"1": {
+				"name": "Plombth",
+				"dmg": {
+					"min": 14,
+					"max": 20
+				},
+				"hp": 350,
+				"maxhp": 350,
+				"drops": {
+					"gold": {
+						"min": 50,
+						"max": 70
+					},
+					"xp": {
+						"min": 40,
+						"max": 55
+					}
+				}
+			},
+			"2": {
+				"name": "Polrght",
+				"dmg": {
+					"min": 14,
+					"max": 20
+				},
+				"hp": 350,
+				"maxhp": 350,
+				"drops": {
+					"gold": {
+						"min": 50,
+						"max": 70
+					},
+					"xp": {
+						"min": 40,
+						"max": 55
+					}
+				}
+			}
+		}
+	},
+	"level-11": {
+		"level": 11,
+		"mobs": {
+			"1": {
+				"name": "Jerlp",
+				"dmg": {
+					"min": 16,
+					"max": 22
+				},
+				"hp": 500,
+				"maxhp": 500,
+				"drops": {
+					"gold": {
+						"min": 50,
+						"max": 70
+					},
+					"xp": {
+						"min": 40,
+						"max": 55
+					}
+				}
+			},
+			"2": {
+				"name": "Larpf",
+				"dmg": {
+					"min": 16,
+					"max": 22
+				},
+				"hp": 500,
+				"maxhp": 500,
+				"drops": {
+					"gold": {
+						"min": 50,
+						"max": 70
+					},
+					"xp": {
+						"min": 40,
+						"max": 55
+					}
+				}
+			}
+		}
+	},
+	"level-12": {
+		"level": 12,
+		"mobs": {
+			"1": {
+				"name": "Rezq",
+				"dmg": {
+					"min": 18,
+					"max": 25
+				},
+				"hp": 525,
+				"maxhp": 525,
+				"drops": {
+					"gold": {
+						"min": 55,
+						"max": 75
+					},
+					"xp": {
+						"min": 40,
+						"max": 60
+					}
+				}
+			},
+			"2": {
+				"name": "Aregon",
+				"dmg": {
+					"min": 18,
+					"max": 25
+				},
+				"hp": 525,
+				"maxhp": 525,
+				"drops": {
+					"gold": {
+						"min": 55,
+						"max": 75
+					},
+					"xp": {
+						"min": 40,
+						"max": 60
+					}
+				}
+			}
+		}
+	},
+	"level-13": {
+		"level": 13,
+		"mobs": {
+			"1": {
+				"name": "Gorgo",
+				"dmg": {
+					"min": 20,
+					"max": 30
+				},
+				"hp": 600,
+				"maxhp": 600,
+				"drops": {
+					"gold": {
+						"min": 70,
+						"max": 80
+					},
+					"xp": {
+						"min": 50,
+						"max": 70
+					}
+				}
+			},
+			"2": {
+				"name": "Urgun",
+				"dmg": {
+					"min": 20,
+					"max": 30
+				},
+				"hp": 600,
+				"maxhp": 600,
+				"drops": {
+					"gold": {
+						"min": 70,
+						"max": 80
+					},
+					"xp": {
+						"min": 50,
+						"max": 70
+					}
+				}
+			}
+		}
+	},
+	"level-14": {
+		"level": 14,
+		"mobs": {
+			"1": {
+				"name": "Deldu",
+				"dmg": {
+					"min": 25,
+					"max": 35
+				},
+				"hp": 625,
+				"maxhp": 625,
+				"drops": {
+					"gold": {
+						"min": 75,
+						"max": 85
+					},
+					"xp": {
+						"min": 55,
+						"max": 75
+					}
+				}
+			},
+			"2": {
+				"name": "Brshek",
+				"dmg": {
+					"min": 25,
+					"max": 35
+				},
+				"hp": 625,
+				"maxhp": 625,
+				"drops": {
+					"gold": {
+						"min": 75,
+						"max": 85
+					},
+					"xp": {
+						"min": 55,
+						"max": 75
+					}
+				}
+			}
+		}
+	},
+	"level-15": {
+		"level": 15,
+		"mobs": {
+			"1": {
+				"name": "Kotilon",
+				"dmg": {
+					"min": 30,
+					"max": 40
+				},
+				"hp": 650,
+				"maxhp": 650,
+				"drops": {
+					"gold": {
+						"min": 75,
+						"max": 90
+					},
+					"xp": {
+						"min": 55,
+						"max": 80
+					}
+				}
+			},
+			"2": {
+				"name": "Manotor",
+				"dmg": {
+					"min": 30,
+					"max": 40
+				},
+				"hp": 650,
+				"maxhp": 650,
+				"drops": {
+					"gold": {
+						"min": 75,
+						"max": 90
+					},
+					"xp": {
+						"min": 55,
+						"max": 80
+					}
+				}
+			}
+		}
+	},
+	"level-16": {
+		"level": 16,
+		"mobs": {
+			"1": {
+				"name": "Hylonin",
+				"dmg": {
+					"min": 35,
+					"max": 45
+				},
+				"hp": 750,
+				"maxhp": 750,
+				"drops": {
+					"gold": {
+						"min": 80,
+						"max": 90
+					},
+					"xp": {
+						"min": 60,
+						"max": 85
+					}
+				}
+			},
+			"2": {
+				"name": "Plirgh",
+				"dmg": {
+					"min": 35,
+					"max": 45
+				},
+				"hp": 750,
+				"maxhp": 750,
+				"drops": {
+					"gold": {
+						"min": 80,
+						"max": 90
+					},
+					"xp": {
+						"min": 60,
+						"max": 85
+					}
+				}
+			}
+		}
+	},
+	"level-17": {
+		"level": 17,
+		"mobs": {
+			"1": {
+				"name": "Deakon",
+				"dmg": {
+					"min": 45,
+					"max": 55
+				},
+				"hp": 800,
+				"maxhp": 800,
+				"drops": {
+					"gold": {
+						"min": 85,
+						"max": 95
+					},
+					"xp": {
+						"min": 60,
+						"max": 90
+					}
+				}
+			},
+			"2": {
+				"name": "Velor",
+				"dmg": {
+					"min": 45,
+					"max": 55
+				},
+				"hp": 800,
+				"maxhp": 800,
+				"drops": {
+					"gold": {
+						"min": 85,
+						"max": 95
+					},
+					"xp": {
+						"min": 60,
+						"max": 90
+					}
+				}
+			}
+		}
+	},
+	"level-18": {
+		"level": 18,
+		"mobs": {
+			"1": {
+				"name": "Sigia",
+				"dmg": {
+					"min": 50,
+					"max": 60
+				},
+				"hp": 825,
+				"maxhp": 825,
+				"drops": {
+					"gold": {
+						"min": 95,
+						"max": 100
+					},
+					"xp": {
+						"min": 65,
+						"max": 90
+					}
+				}
+			},
+			"2": {
+				"name": "Otinonen",
+				"dmg": {
+					"min": 50,
+					"max": 60
+				},
+				"hp": 825,
+				"maxhp": 825,
+				"drops": {
+					"gold": {
+						"min": 95,
+						"max": 100
+					},
+					"xp": {
+						"min": 65,
+						"max": 90
+					}
+				}
+			}
+		}
+	},
+	"level-19": {
+		"level": 19,
+		"mobs": {
+			"1": {
+				"name": "Largyfo",
+				"dmg": {
+					"min": 65,
+					"max": 75
+				},
+				"hp": 900,
+				"maxhp": 900,
+				"drops": {
+					"gold": {
+						"min": 100,
+						"max": 105
+					},
+					"xp": {
+						"min": 70,
+						"max": 90
+					}
+				}
+			},
+			"2": {
+				"name": "Mytmat",
+				"dmg": {
+					"min": 65,
+					"max": 75
+				},
+				"hp": 900,
+				"maxhp": 900,
+				"drops": {
+					"gold": {
+						"min": 100,
+						"max": 105
+					},
+					"xp": {
+						"min": 70,
+						"max": 90
+					}
+				}
+			}
+		}
+	},
+	"level-20": {
+		"level": 20,
+		"mobs": {
+			"1": {
+				"name": "Oginior",
+				"dmg": {
+					"min": 75,
+					"max": 85
+				},
+				"hp": 950,
+				"maxhp": 950,
+				"drops": {
+					"gold": {
+						"min": 110,
+						"max": 125
+					},
+					"xp": {
+						"min": 75,
+						"max": 95
+					}
+				}
+			},
+			"2": {
+				"name": "Rectex",
+				"dmg": {
+					"min": 75,
+					"max": 85
+				},
+				"hp": 950,
+				"maxhp": 950,
+				"drops": {
+					"gold": {
+						"min": 110,
+						"max": 125
+					},
+					"xp": {
+						"min": 75,
+						"max": 95
 					}
 				}
 			}
