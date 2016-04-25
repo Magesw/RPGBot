@@ -2,6 +2,7 @@ var Discord = require("discord.js");
 var fs = require("fs");
 var chalk = require('chalk');
 var request = require("request");
+var helper = require("./util/Helper.js");
 
 var mybot = new Discord.Client();
 
@@ -28,39 +29,6 @@ function cmUsage(cmd){
 }
 
 var lastExecTime = {};
-setInterval(function(){ 
-	var data = {"key": "mackan92bb389fc9e1aa28", "servercount": mybot.servers.length};
-
-	request({
-	    url: "https://www.carbonitex.net/discord/data/botdata.php",
-	    method: "POST",
-	    json: true,
-   		headers: {
-        	"content-type": "application/json",
-    	},
-    	body: JSON.stringify(data)
-	}, function(err){
-		if(err){ mybot.sendMessage(settings["owner"], err); return;}
-		var msg = "Sent data.\n";
-			msg += "Server count: "+mybot.servers.length+"\n";
-
-		if(mybot.servers.length > srvs){
-			msg += "(+ "+mybot.servers.length-srvs+")";
-		}else if(mybot.servers.length < srvs){
-			msg += "(- "+((mybot.servers.length-srvs)*-1)+")";
-		}else{
-			msg += "(+/- 0)";
-		}
-
-		mybot.sendMessage(settings["owner"], msg);
-		srvs = mybot.servers.length;
-
-	});
-
-
-	
-},3600000);
-
 
 setInterval(function(){
 	lastExecTime = {};
@@ -140,7 +108,7 @@ mybot.on("message", function(message){
 				}
 			}else if(args[0] == settings["prefix"]["main"]+"bstats"){
 
-				if(message.author.id == settings["owner"]){
+				if(message.author.id == settings["owner"] || message.channel.server.id == "172382467385196544" && helper.checkRole(message, "Knight")){
 
 					try{
 						var head = "!======== ["+mybot.user.name+" Stats] ========!\n";
@@ -220,19 +188,16 @@ mybot.on("message", function(message){
 						if(commands[cmd].cooldown > 120){
 							if((now/10) < (lastExecTime[cmd][message.author.id]+(commands[cmd].cooldown*1000)/10) && firstTime[cmd].hasOwnProperty(message.author.id)){
 								if(Math.round(((lastExecTime[cmd][message.author.id] + commands[cmd].cooldown * 1000) - now) / 1000) > 0){
-									console.log("meh");
 									mybot.sendMessage(message, "Young warrior "+message.author.name.replace(/@/g, '@\u200b')+"!, Please wait! "+Math.round(((lastExecTime[cmd][message.author.id] + commands[cmd].cooldown * 1000) - now) / 1000) + " seconds", function(e, m){ mybot.deleteMessage(m, {"wait": 6000}); });
 									if (!message.channel.isPrivate) mybot.deleteMessage(message, {"wait": 10000});
 									return;
 								}else{
-									console.log("bleh");
 									cmUsage(cmd);
 									commands[cmd].process(args, message, mybot);
 									lastExecTime[cmd][message.author.id] = now;
 									firstTime[cmd][message.author.id] = true;
 								}
 							}else{
-								console.log("bleh");
 								cmUsage(cmd);
 								commands[cmd].process(args, message, mybot);
 								lastExecTime[cmd][message.author.id] = now;
@@ -241,12 +206,10 @@ mybot.on("message", function(message){
 						}else{
 							if(now < lastExecTime[cmd][message.author.id]+commands[cmd].cooldown*1000 && firstTime[cmd].hasOwnProperty(message.author.id)){
 							
-								console.log("meh");
 								mybot.sendMessage(message, "Young warrior "+message.author.name.replace(/@/g, '@\u200b')+"!, Please wait! "+Math.round(((lastExecTime[cmd][message.author.id] + commands[cmd].cooldown * 1000) - now) / 1000) + " seconds", function(e, m){ mybot.deleteMessage(m, {"wait": 6000}); });
 								if (!message.channel.isPrivate) mybot.deleteMessage(message, {"wait": 10000});
 								return;
 							}else{
-								console.log("bleh");
 								cmUsage(cmd);
 								commands[cmd].process(args, message, mybot);
 								lastExecTime[cmd][message.author.id] = now;
@@ -281,22 +244,6 @@ mybot.on("warn", function(warn){
 mybot.on("ready", function(){
 	console.log(chalk.green("Ready."));
 	mybot.setPlayingGame("Type #!stats to start your adventure!");
-	var data = {"key": "mackan92bb389fc9e1aa28", "servercount": mybot.servers.length};
-
-	var srvs = mybot.servers.length;
-
-	request({
-	    url: "https://www.carbonitex.net/discord/data/botdata.php",
-	    method: "POST",
-	    json: true,
-   		headers: {
-        	"content-type": "application/json",
-    	},
-    	body: JSON.stringify(data)
-	}, function(err){
-		if(err){ mybot.sendMessage(settings["owner"], err); return;}
-		mybot.sendMessage(settings["owner"], "Sent data.\nServers: "+srvs);
-	});
 });
 
 mybot.on("serverCreated", function(server){

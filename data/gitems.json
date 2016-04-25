@@ -1,0 +1,19 @@
+{
+	"1": {
+		"name": "Guild Tag",
+		"prefix": "a",
+		"desc": "Gives a guild a new name.",
+		"type": "dummy",
+		"cost": 80,
+		"level": 1,
+		"image": "items/guild_tag.png"
+	},
+	"2": {
+		"name": "Dummy GUILD item",
+		"prefix": "a",
+		"desc": "This really doesn't do anything.. But it has GUILD in the name! :wink:",
+		"type": "dummy",
+		"cost": 1,
+		"level": 1
+	}
+}
