@@ -20,12 +20,39 @@ for(i=0;i<Object.keys(items).length;i++){
     itmObj.push(items[Object.keys(items)[i]]);
 }
 
+for(i=0;i<Object.keys(gitems).length;i++){
+    gitmObj.push(gitems[Object.keys(gitems)[i]]);
+}
+
 var adventures = require("../data/adventures.json");
 var mine = {};
 var firstMine = {};
 var battles = {};
 
-function getMobLvl(lvl){
+
+// DEBUG SHORTHANDS
+
+function json(obj){
+    return JSON.stringify(obj);
+}
+
+function gid(user){
+    try{
+        if(users[user.replace(/<@/gmi, "").replace(/>/gmi, "")]["guild"] == undefined){
+            users[user.replace(/<@/gmi, "").replace(/>/gmi, "")]["guild"] = "";
+        }
+        return users[user.replace(/<@/gmi, "").replace(/>/gmi, "")]["guild"];
+    }catch(e){
+        bot.sendMessage(message, "```js\n"+e+"```");
+    }
+}
+
+function checkAchievement(user){
+
+}
+
+function getMobLvl(lvl, bot, message){
+    //bot.sendMessage(message, "[DEBUG] getMobLvl: "+lvl);
     level = helper.rInt(1, lvl);
     if(mobs.hasOwnProperty("level-"+level)){
         return level;
@@ -34,7 +61,7 @@ function getMobLvl(lvl){
     }
 }
 
-function createAdventure(user){
+function createAdventure(user, bot, message){
     var usr = users[user];
     var level = usr["level"];
 
@@ -45,11 +72,15 @@ function createAdventure(user){
 
     var lv = Math.max.apply(Math, x);
 
+    //bot.sendMessage(message, "[DEBUG] Level: "+level+" lv: "+lv);
+
     if(level >= lv){
-        level = getMobLvl(lv);
+        level = getMobLvl(lv, bot, message);
     }else{
-        level = getMobLvl(level);
+        level = getMobLvl(level, bot, message);
     }
+
+    //bot.sendMessage(message, "[DEBUG] level: "+level);
 
     //level = helper.rInt(1, mobs["maxlevel"]);
 
@@ -68,7 +99,10 @@ function getWep(item){
 function getLevelUp(level){
 
     var base = 25;
-    if(level >= 30){
+
+    if(level >= 5){
+        base = 40;
+    }else if(level >= 30){
         base = 50;
     }else if(level >= 45){
         base = 100;
@@ -83,7 +117,7 @@ function getLevelUp(level){
 function adventure(args, message, bot){
         if(!adventures.hasOwnProperty(message.author.id)){
             console.log("created adventure");
-            createAdventure(message.author.id);
+            createAdventure(message.author.id, bot, message);
         }
         var num = helper.rInt(1, 6);
         var user = message.author.id;
@@ -142,6 +176,9 @@ function adventure(args, message, bot){
             var lGold = 0;
             if(users[user]["gold"] >= 50){
                 lGold = helper.rInt(0,(users[user]["gold"] /(Math.random(5,20))));
+                if(lGold > users[user]["gold"]-5){
+                    lGold = users[user]["gold"]-5;
+                }
             }
 
             users[user]["gold"] -= lGold;
@@ -260,7 +297,7 @@ function adventure(args, message, bot){
                 msg+= "Rolled a "+num+".\n";
                 msg+= "- Lost "+userLoose+"HP.\n";
                 msg+= "+ Dealt "+advLoose+"HP damage.\n";
-                msg+= "+ "+message.author.name+" has "+users[user]["hp"]+"/"+users[user]["maxhp"]+"HP left.\n";
+                msg+= "+ "+message.author.name+" has "+users[user]["hp"]+"/"+users[user]["maxhp"]+" HP left.\n";
                 msg+= "- The enemy "+adv["name"]+" has "+adv["hp"]+"/"+adv["maxhp"]+" HP left.\n";
 
                 var tmpm = "!";
@@ -357,6 +394,12 @@ function saveItems(){
     });
 }
 
+function savegItems(){
+    fs.writeFile("./data/gitems.json", JSON.stringify(gitems), 'utf8', function(err){
+        if(err){console.dir(err);}
+    });
+}
+
 function saveMobs(){
     fs.writeFile("./data/mobs.json", JSON.stringify(mobs), 'utf8', function(err){
         if(err){console.dir(err);}
@@ -375,32 +418,50 @@ function saveAdventures(){
     //Use Item
 
 function use(item, message, bot){
+    try{
         var user = message.author.id;
         var itm = items[item];
         if(users[user]["level"] >= itm["level"]){
             if(users[user]["items"].indexOf(item) > -1){
-                users[user]["items"].splice(users[user]["items"].indexOf(item),
-                    1);
+                users[user]["items"].splice(users[user]["items"].indexOf(item),1);
 
                 if(itm["type"] == "potion"){
                     var msg = ""+message.author.name+" used a potion and gained ";
                     if(itm["potion"].hasOwnProperty("heal")){
                         var heal = itm["potion"]["heal"];
-                        if(users[user]["hp"]+heal > users[user]["maxhp"]){
-                            heal -= users[user]["hp"];
+                        if(users[user]["hp"] >= users[user]["maxhp"]){
+                            bot.sendMessage(message, message.author.name+" tried to heal, but they're already on full health.");
+                            return;
                         }
 
-                        users[user]["hp"]+= heal;
+                        var msg = message.author.name+" used "+itm["prefix"]+" "+itm["name"];
 
-                        msg+= heal+"HP.";
+                        var tot = 0;
+
+                        if(users[user]["maxhp"] - users[user]["hp"] > itm["potion"]["heal"]){
+                            heal = itm["potion"]["heal"];
+                        }else{
+                            heal = users[user]["maxhp"] - users[user]["hp"];
+                        }
+
+                        users[user]["hp"] += heal;
+                        tot += heal;
+
+                        msg+= " and got "+heal+"HP. ("+users[user]["hp"]+"/"+users[user]["maxhp"]+"HP)";
+
+                        bot.sendMessage(message.channel, msg);
+                        saveUsers();
+                        return;
+
                     }else if(itm["potion"].hasOwnProperty("boost")){
                         if(itm["potion"]["boost"].hasOwnProperty("strength")){
                             if(adventures.hasOwnProperty(user)){
                                 if(itm["potion"]["temp"]){
-                                    adventures["boost"] ={"strength": adventures["boost"]["strength"],"last": itm["potion"]["last"]};
-                                    msg+= "a "+adventures["boost"]["strength"]+"x strength boost for "+itm["potion"]["last"]+" turns. ";
+                                    adventures["boost"] ={"strength": itm["boost"]["strength"],"last": itm["potion"]["last"]};
+                                    msg+= "a "+itm["boost"]["strength"]+"x strength boost for "+itm["potion"]["last"]+" turns. ";
                                 }
                             }
+                            msg += "\n(Note, Strength potions are bugged at the time. They are getting reworked though.)";
                         }
                     }
 
@@ -414,7 +475,11 @@ function use(item, message, bot){
         }else{
             bot.sendMessage(message.channel, message.author.name+" tried to use a item they're not skilled enough to use.");
         }
+    }catch(e){
+        bot.sendMessage(message, "Whoops! An error occured! Please report it in the Official server! ```js\n"+e.name + ': ' + e.message+" "+e.stack.split("\n")[4]+"```");
     }
+
+}
     //End Use Item
     //Use Guild Item
 
@@ -684,7 +749,69 @@ function getGuildLevel(id){
     return lTot / members.length;
 }
     //End Calculate Guild Level(OLD)
+
+
+function buyGuild(item, message, bot, amt, guild){
+    var user = message.author.id;
+    if(Object.keys(gitems).indexOf(item) > -1){
+
+        var itm = gitems[item];
+
+        var msg = "";
+        if(gitems[item]["cost"] > 0){
+
+            var cost = amt*gitems[item]["cost"];
+
+            if(cost <= 0){
+                cost = 1;
+            }
+
+            if(guild["items"] == undefined){
+                guild["items"] = [];
+            }
+
+            if(guild["gold"] >= cost){
+                guild["gold"] -= cost;
+                if(amt > 1){
+                    for(i=0;i<amt;i++){
+                        guild["items"].push(item);
+                    }
+                    msg = message.author.name+" bought "+amt+" "+gitems[item]["name"]+"s for "+cost+" gold and is now in the guild inventory.";
+                }else{
+                    guild["items"].push(item);
+                    msg = message.author.name+" bought "+gitems[item]["prefix"]+" "+gitems[item]["name"]+" for "+gitems[item]["cost"]+" gold and is now in the guild inventory.";
+                }
+            }else{
+                if(amt > 1){
+                    msg = message.author.name+" tried to buy "+amt+" items but didn't have enough gold.";
+                }else{
+                    msg = message.author.name+" tried to buy an item but didn't have enough gold.";
+                }
+            }
+            saveUsers();
+            bot.sendMessage(message, msg);
+            }
+    }else{
+        bot.sendMessage(message.channel, message.author.name+" tried to buy an unknown item.");
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
     //ALL OF THE FUCKING COMMANDS
+
+
+
 
 
 var defaults ={
@@ -705,7 +832,7 @@ var defaults ={
     "help":{
         process: function(args, message, bot){
             if(args.length >= 2){
-                var cmd = args[1];
+                var cmd = args[1].toLowerCase();
                 var index = Object.keys(defaults).indexOf(cmd);
                 if(index > -1){
                     var helpMsg = "__**"+helper.capFirst(cmd)+"**__\n\n";
@@ -808,29 +935,40 @@ var defaults ={
     //Adventure Command
     "adventure":{
         process: function(args, message, bot){
-            if(args.length >= 2){
-                if(Object.keys(users).indexOf(message.author.id) == -1){
-                    create(message.author.id, message.author.name);
-                    saveUsers();
+            try{
+
+                if(users[message.author.id] == undefined){
+                    bot.sendMessage(message, message.author.name+", please start your adventure before going on an adventure!");
+                    return;
                 }
 
-                if(Object.keys(adventures).indexOf(message.author.id) >-1){
-                    if(args[1] == "1" || args[1] == 0){
-                        delete adventures[message.author.id];
-                        bot.sendMessage(message.channel, message.author.name+" abandoned their adventure!");
+                if(args.length >= 2){
+                    if(Object.keys(users).indexOf(message.author.id) == -1){
+                        create(message.author.id, message.author.name);
+                        saveUsers();
+                    }
 
-                    }else if(args[1] == "2" || args[1] == 2){
+                    if(Object.keys(adventures).indexOf(message.author.id) >-1){
+                        if(args[1] == "1" || args[1] == 0){
+                            delete adventures[message.author.id];
+                            bot.sendMessage(message.channel, message.author.name+" abandoned their adventure!");
+
+                        }else if(args[1] == "2" || args[1] == 2){
+                            adventure(args, message, bot);
+                        }
+                    }else{
                         adventure(args, message, bot);
                     }
                 }else{
+                    if(Object.keys(adventures).indexOf(message.author.id) > -1){
+                        bot.sendMessage(message.channel, "Type ``"+settings["prefix"]["main"]+"adventure 1`` to run or ``"+settings["prefix"]["main"]+"adventure 2`` to fight again.");
+                        return;
+                    }
                     adventure(args, message, bot);
                 }
-            }else{
-                if(Object.keys(adventures).indexOf(message.author.id) > -1){
-                    bot.sendMessage(message.channel, "Type ``"+settings["prefix"]["main"]+"adventure 1`` to run or ``"+settings["prefix"]["main"]+"adventure 2`` to fight again.");
-                    return;
-                }
-                adventure(args, message, bot);
+            }catch(e){
+                bot.sendMessage(message, "Whoops! An error occured! Please report it in the Official server! ```js\n"+e.name + ': ' + e.message+" "+e.stack.split("\n")[4]+"```");
+
             }
         },
         "desc": "Go on an adventure!",
@@ -907,11 +1045,11 @@ var defaults ={
                     bot.sendMessage(message.channel, message.author.name+" tried to use a Health Potion, but has none.");
                 }
             }else{
-                var msg = message.author.name+" tried to use "+count+" health potions but"
+                var msg = message.author.name+" tried to use "+amt+" health potions but"
                 if(count == 1){
                     msg += " only has one";
                 }else if(count <= 0){
-                    msg += " none";
+                    msg += " has none";
                 }else{
                     msg += " only has "+count;
                 }
@@ -1134,7 +1272,11 @@ var defaults ={
             var keys = Object.keys(items);
             var itmz = [];
             for(i=0;i<keys.length;i++){
-                itmz.push(items[keys[i]]["name"]+" - "+items[keys[i]]["cost"]+" Gold");
+                if(items[keys[i]]["cost"] <= -1){
+                    itmz.push(items[keys[i]]["name"]+" - UNBUYABLE");
+                }else{
+                    itmz.push(items[keys[i]]["name"]+" - "+items[keys[i]]["cost"]+" Gold");
+                }
             }
 
             var msg = "```diff\n! Items\n-   ";
@@ -1142,7 +1284,7 @@ var defaults ={
             msg+= "\n```";
             bot.sendMessage(message, msg);
         },
-        "desc": "Sends a list of guild items",
+        "desc": "Sends a list of items",
         "usage": "gitems",
         "cooldown": 10
     },
@@ -1160,7 +1302,11 @@ var defaults ={
             var keys = Object.keys(gitems);
             var itmz = [];
             for(i=0;i<keys.length;i++){
-                itmz.push(gitems[keys[i]]["name"]+" - "+gitems[keys[i]]["cost"]+" Gold");
+                if(gitems[keys[i]]["cost"] <= -1){
+                    itmz.push(gitems[keys[i]]["name"]+" - UNBUYABLE");
+                }else{
+                    itmz.push(gitems[keys[i]]["name"]+" - "+gitems[keys[i]]["cost"]+" Gold");
+                }
             }
             var msg = "```diff\n! Guild Items\n-   ";
             msg+= itmz.sort().join("\n-   ");
@@ -1292,13 +1438,17 @@ var defaults ={
     //Suggest Command
     "suggest":{
         process: function(args, message, bot){
-            if(args.length >= 2){
-                var msg = args.splice(1, args.length).join(" ");
-                bot.sendMessage(settings["owner"], "["+new Date().toUTCString()+"] ["+message.author.name+"] -> "+msg);
-                bot.sendMessage(message.channel, "Message sent.");
+            try{
+                if(args.length >= 2){
+                    var msg = args.splice(1, args.length).join(" ");
+                    bot.sendMessage("172404603273347072", "[SUGGESTION] ["+new Date().toUTCString()+"] ["+message.author.name+"]("+message.author.id+") in channel ``"+message.channel.name+"`` on server ``"+message.channel.server.name+"`` -> "+msg);
+                    bot.sendMessage(message.channel, "Message sent.");
+                }
+            }catch(e){
+                bot.sendMessage(message, "Whoops! An error occured! Please report it in the Official server! ```js\n"+e.name + ': ' + e.message+" "+e.stack.split("\n")[4]+"```");
             }
         },
-        "desc": "Sends a message to the bot's creator.",
+        "desc": "Sends a message to the developers.",
         "usage": "suggest ``message``",
         "cooldown": 10
     },
@@ -1818,6 +1968,23 @@ var defaults ={
                                     bot.sendMessage(message, message.author.name+" changed their guild description.");
                                     saveGuilds();
                                     break;
+                                 case "name":
+
+                                    if(guild["items"] == undefined){
+                                        guild["items"] = [];
+                                    }
+
+                                    var msg = "";
+                                    if(guild["items"].indexOf("1") > -1){
+                                        guild["items"].splice(guild["items"].indexOf("1"), 1);
+                                        guild["name"] = value;
+                                        msg = message.author.name+" used a guild tag and changed the guild name to "+value+"!";
+                                    }else{
+                                        msg = message.author.name+" tried to change their guild name, but does not have a Guild Tag.";
+                                    }
+                                    bot.sendMessage(message, msg);
+                                    saveGuilds();
+                                    break;
                                 default:
                                     bot.sendMessage(message, message.author.name+"! That variable isn't valid.");
                                     break;
@@ -1902,10 +2069,34 @@ var defaults ={
                         msg+= "s";
                     }
 
+                    msg += " ("+guild["members"].length+"/50 total)";
+
                     if(guild["open"]){
                         msg+= ".\n# Guild is Open";
                     }else{
                         msg+= ".\n# Guild is Invite Only.";
+                    }
+
+                    if(guild["items"] == undefined){
+                        guild["items"] = [];
+                    }
+
+                    var itms = [];
+                    for(i=0;i<guild["items"].length;i++){
+                            var search = guild["items"][i];
+                            var count = guild["items"].reduce(function(n, val){
+                            return n+(val === search);
+                        }, 0);
+                        var ps = count+" x "+gitems[guild["items"][i]]["name"];
+                        if(itms.indexOf(ps) == -1){
+                            itms.push(ps);
+                        }
+                    }
+
+                    msg += "\n# Items: ["+itms.sort().join(", ")+"]";
+
+                    if(typeof guild["gold"] != typeof 1){
+                        guild["gold"] = Number(guild["gold"]);
                     }
 
                     msg+= "\n# Funds: "+guild["gold"]+" Gold";
@@ -1928,78 +2119,118 @@ var defaults ={
     //Guild Info Command
      //Guild Info Command
         "ginfo":{
-            process: function(args, message, bot){
-                if(args.length >= 2){
-                    var name = args.splice(1, args.length).join(" ");
+            process: function(args, message, bot) {
+                try {
+                    if(args.length >= 2){
+                        var name = args.splice(1, args.length).join(" ");
 
-                    if(users[message.author.id]["guild"] == undefined){
-                        users[message.author.id]["guild"] = "";
-                    }
-                    var guildObj = [];
+                        if(users[message.author.id]["guild"] == undefined){
+                            users[message.author.id]["guild"] = "";
+                        }
+                        var guildObj = [];
 
-                    for(i=0;i<Object.keys(guilds).length;i++){
-                        guildObj.push(guilds[Object.keys(guilds)[i]]["name"]);
-                    }
+                        for(i=0;i<Object.keys(guilds).length;i++){
+                            guildObj.push(guilds[Object.keys(guilds)[i]]["name"]);
+                        }
 
-                    var results = filter.filter(guildObj, name.toLowerCase());
-                    var found = false
-                    for(i=0;i<Object.keys(guilds).length;i++){
-                        if(name.toLowerCase() == guilds[Object.keys(guilds)[i]]["name"].toLowerCase()){
-                            found = true
-                            var guild = guilds[Object.keys(guilds)[i]];
-                            var msg = "";
-                            var head = "** "+fix.decodeHTML(guild["icon"])+" "+guild["name"]+"**";
-                            msg+= head+"\n```tex\n";
+                        var results = filter.filter(guildObj, name.toLowerCase());
+                        var found = false;
+                        for(i=0;i<Object.keys(guilds).length;i++){
+                            if(name.toLowerCase() == guilds[Object.keys(guilds)[i]]["name"].toLowerCase()){
+                                found = true;
+                                var guild = guilds[Object.keys(guilds)[i]];
+                                var msg = "";
+                                var head = "** "+fix.decodeHTML(guild["icon"])+" "+guild["name"]+"**";
+                                msg+= head+"\n```tex\n";
 
-                            //console.log(guilds[users[message.author.id]["guild"]]["desc"]);
+                                //console.log(guilds[users[message.author.id]["guild"]]["desc"]);
 
-                            if(guild["desc"] == undefined){
-                                guilds[users[message.author.id]["guild"]]["desc"] = "";
+                                if(guild["desc"] == undefined){
+                                    guilds[users[message.author.id]["guild"]]["desc"] = "";
+                                }
+
+                                //console.log(guilds[users[message.author.id]["guild"]]["desc"]);
+
+                                if(guild["desc"] == undefined){
+                                    guild["desc"] = "";
+                                }
+
+                                if(guild["desc"].length > 0){
+                                    msg += "% "+guild["desc"]+"\n";
+                                }
+
+                                msg+= "# Owner: "+bot.users.get("id", guild["owner"]).name+"\n";
+
+
+                                var membs =(guild["members"].length-1)-guild["elder"].length;
+                                msg+= "# "+membs;
+
+                                if(membs > 1){
+                                    msg+= " members";
+                                }else{
+                                    msg+= " member";
+                                }
+
+                                msg+= " and "+guild["elder"].length+" elder";
+                                if(guild["elder"].length > 1 || guild["elder"].length == 0){
+                                    msg+= "s";
+                                }
+
+                                msg += " ("+guild["members"].length+"/50 total)";
+
+                                if(guild["open"]){
+                                    msg+= ".\n# Guild is Open";
+                                }else{
+                                    msg+=".\n# Guild is Invite Only.";
+                                }
+
+                                var itms = [];
+
+                                if(guild["items"] == undefined){
+                                    guild["items"] = [];
+                                }
+
+                                for(i=0;i<guild["items"].length;i++){
+                                        var search = guild["items"][i];
+                                        var count = guild["items"].reduce(function(n, val){
+                                        return n+(val === search);
+                                    }, 0);
+                                    var ps = count+" x "+gitems[guild["items"][i]]["name"];
+                                    if(itms.indexOf(ps) == -1){
+                                        itms.push(ps);
+                                    }
+                                }
+
+                                msg += "\n# Items: ["+itms.sort().join(", ")+"]";
+
+                                msg+= "\n# Funds: "+guild["gold"]+" Gold";
+                                msg+= "\n# Collective Guild Level: "+getGuildLevel(users[message.author.id]["guild"])+"\n```";
+
+                                bot.sendMessage(message, msg);
+                                return;
                             }
+                        }
 
-                            //console.log(guilds[users[message.author.id]["guild"]]["desc"]);
-
-                            if(guild["desc"].length > 0){
-                                msg += "% "+guild["desc"]+"\n";
-                            }
-
-                            msg+= "# Owner: "+bot.users.get("id", guild["owner"]).name+"\n";
-
-
-                            var membs =(guild["members"].length-1)-guild["elder"].length;
-                            msg+= "# "+membs;
-
-                            if(membs > 1){
-                                msg+= " members";
+                        if(found == 0){
+                            if(results.length <= 0){
+                                bot.sendMessage(message, "<@"+message.author.id+">! There is no guild by the name of "+name+"!");
                             }else{
-                                msg+= " member";
+                                var guildsFound = [];
+                                var msg = "";
+                                msg+= "Found "+results.length+" guilds.\n";
+                                for(i = 0; i < results.length; i++){
+                                    guildsFound.push("``"+results[i]+"``");
+                                }
+                                msg+= guildsFound.sort().join(", ");
+                                bot.sendMessage(message, msg);
+                                return;
                             }
-
-                            msg+= " and "+guild["elder"].length+" elder";
-                            if(guild["elder"].length > 1 || guild["elder"].length == 0){
-                                msg+= "s";
-                            }
-
-                            if(guild["open"]){
-                                msg+= ".\n# Guild is Open";
-                            }else{
-                                msg+=".\n# Guild is Invite Only.";
-                            }
-
-                            msg+= "\n# Funds: "+guild["gold"]+" Gold";
-                            msg+= "\n# Collective Guild Level: "+getGuildLevel(users[message.author.id]["guild"])+"\n```";
-
-                            bot.sendMessage(message, msg);
-                            return;
                         }
                     }
-
-                    if(found == 0){
-                        bot.sendMessage(message, "<@"+message.author.id+">! There is no guild by the name of "+name+"!");
-                    }
-
-
+                }catch(e){
+                    bot.sendMessage(message, "```js\n"+e.stack+"```");
                 }
+                
             },
             "desc": "Displays a guild's information",
             "usage": "ginfo ``guild``",
@@ -2026,6 +2257,11 @@ var defaults ={
 
                         if(users[to.id]["guild"] == undefined){
                             users[to.id]["guild"] = "";
+                        }
+
+                        if(guild["members"].length >= 50){
+                            bot.sendMessage(message, "Guild is at max members.");
+                            return;
                         }
 
                         if(users[to.id]["guild"].length == 0){
@@ -2085,6 +2321,12 @@ var defaults ={
                                     return;
                                 }
                             }else{
+
+                                if(guild["members"].length >= 50){
+                                    bot.sendMessage(message, "Guild's full.");
+                                    return;
+                                }
+
                                 users[message.author.id]["guild"] = Object.keys(guilds)[i];
                                 guild["members"].push(message.author.id);
                                 saveUsers();
@@ -2478,6 +2720,273 @@ var defaults ={
         "usage": "fetchmobs",
         "cooldown": 10,
         "unlisted": true
+    },
+    "gbuy": {
+        process: function(args, message, bot){
+            try{
+                if(users[message.author.id]["guild"] == undefined){
+                        users[message.author.id]["guild"] = "";
+                }
+
+                if(users[message.author.id]["guild"].length > 0){
+                    var guild = guilds[users[message.author.id]["guild"]];
+                    if(guild["elder"].indexOf(message.author.id) > -1 || guild["owner"] == message.author.id){
+                        var item = args.splice(1, args.length).join(" ").replace(/\s*$/,"");
+                        //bot.sendMessage(message, "[DEBUG] "+item);
+                        console.log(item.toLowerCase());
+
+                        var amt = 1;
+
+                        var matches = item.match(/\d+$/);
+
+                        if(matches){
+                            amt = Number(matches[0]);
+                            item = item.replace(/\d+$/, "").replace(/\s*$/,"");
+                        }
+
+                        var results = filter.filter(gitmObj, item.toLowerCase(), {key: "name"});
+
+                        for(i=0;i<Object.keys(gitems).length;i++){
+                            if(item.toLowerCase() == gitems[Object.keys(items)[i]]["name"].toLowerCase()){
+                                buyGuild(Object.keys(gitems)[i], message, bot, amt, guilds[users[message.author.id]["guild"]]);
+                                return;
+                            }
+                        }
+
+                        if(results.length > 0){
+                            var itmFound = [];
+                            var msg = "";
+                            msg += "Found "+results.length+" items.\n";
+                            for(i=0;i<results.length;i++){
+                                itmFound.push("``"+results[i]["name"]+"``");
+                            }
+                            msg += itmFound.sort().join(", ");
+                            bot.sendMessage(message.channel, msg);
+                        }
+
+                        if(results.length <= 0){
+                            bot.sendMessage(message.channel, message.author.name+" tried to buy an unknown guild item!");
+                            return;
+                        }
+                                    
+                    }else{
+                        bot.sendMessage(message, message.author.name+"! Only the guild elders and guild owner can buy guild items.");
+                    }
+                }else{
+                        bot.sendMessage(message, message.author.name+"! You're not in a guild!");
+                }
+            }catch(e){
+                    bot.sendMessage(message, "```js\n"+e+"```");
+            }
+        },
+        "desc": "Buy a guild item.",
+        "usage": "gbuy ``item``",
+        "cooldown": 5
+    },
+    "gdep": {
+        process: function(args, message, bot){
+            try{
+                if(args.length >= 2){
+                    if(Number(args[1])){
+                        var amt = args[1];
+                        var usr = users[message.author.id];
+
+                        if(usr["guild"] == undefined){
+                            usr["guild"] = "";
+                        }
+
+                        if(usr["guild"].length <= 0){
+                            bot.sendMessage(message, message.author.name+"! You're not in a guild.");
+                            return;
+                        }else{
+                            if(amt <= usr["gold"] && amt > 0){
+
+                                if(typeof guilds[usr["guild"]]["gold"] != typeof 1){
+                                    guilds[usr["guild"]]["gold"] = Number(guilds[usr["guild"]]["gold"]);
+                                }
+
+                                usr["gold"] -= amt;
+                                guilds[usr["guild"]]["gold"] += Number(amt);
+                                bot.sendMessage(message, message.author.name+" deposited "+amt+" gold into their guild.");
+                                saveGuilds();
+                                saveUsers();
+                            }else{
+                                var msg = message.author.name+" tried to deposit "+amt+" Gold into their guild, but ";
+                                if(usr["gold"] <= 0){
+                                    msg += "has none.";
+                                }else{
+                                    msg += "only has "+usr["gold"];
+                                }
+                                
+                                bot.sendMessage(message, msg);
+                            }
+                        }
+
+                    }else{
+                        bot.sendMessage(message, message.author.name+" tried to deposit an invalid amount of gold into their guild.");
+                        return;
+                    }
+                }
+            }catch(e){
+                bot.sendMessage(message, "Whoops! An error occured! Please report it in the Official server! ```js\n"+e+"```");
+            }
+        },
+        "desc": "Deposit gold into your guilds fund.",
+        "usage": "gdep ``amount``",
+        "cooldown": 5
+    },
+    "addgitem": {
+        process: function(args, message, bot){
+            try{
+                if(message.channel.server.id == "172382467385196544"){
+                    if(helper.checkRole(message, "Knight")){
+                        if(args.length >= 2){
+                            var id = args.splice(1, args.length).join(" ");
+
+                            var link = "http://discorddungeons.me/admin/item/"+id+".json";
+
+                            request(link, function(error, response, body){
+                                if(!error && response.statusCode == 200){
+                                    //bot.sendMessage(message, body);
+                                    var id = Object.keys(gitems).length+1;
+                                    gitems[id] = JSON.parse(body);
+                                    bot.sendMessage(message, "Added guild item. ID: "+id);
+                                    savegItems();
+                                }else{
+                                    bot.sendMessage(message, "Error. Code "+response.statusCode);
+                                }
+                            });
+
+                        }
+                    }
+                }
+            }catch(e){
+                bot.sendMessage(message, "Whoops! An error occured! Please report it in the Official server! ```js\n"+e.name + ': ' + e.message+" "+e.stack.split("\n")[4]+"```");
+            }
+        },
+        "desc": "Fetches an item by GUID and adds it.",
+        "usage": "additem ``guid``",
+        "cooldown": 10,
+        "unlisted": true
+    },
+    "ignore": {
+        process: function(args, message, bot){
+            try{
+                if(message.channel.server.id == "172382467385196544"){
+                    if(helper.checkRole(message, "Knight")){
+                        var toI;
+                        if(args.length == 2){
+                            toI = args[1].replace(/<@/gmi, "").replace(/>/gmi, "");
+                        }
+
+                        if(ignored.indexOf(toI) > -1){
+                            ignored.splice(ignored.indexOf(toI), 1);
+                            fs.writeFile("./data/ignored.json", JSON.stringify(ignored), 'utf8', function(err){
+                                if(err){ throw err; }
+                            });
+                            bot.sendMessage(message.channel, "No longer ignoring <@"+toI+">");
+                        }else{
+                            ignored.push(toI);
+                            fs.writeFile("./data/ignored.json", JSON.stringify(ignored), 'utf8', function(err){
+                                if(err){ throw err; }
+                            });
+                            bot.sendMessage(message.channel, "Ignoring <@"+toI+">");
+                        }
+                    }
+                }
+            }catch(e){
+                bot.sendMessage(message, "Whoops! An error occured! Please report it in the Official server! ```js\n"+e.name + ': ' + e.message+" "+e.stack.split("\n")[4]+"```");
+            }
+        },
+        "desc": "Ignores users",
+        "usage": "ignore ``user``",
+        "cooldown": 10,
+        "unlisted": true
+    },
+    "reset": {
+        process: function(args, message, bot){
+            try{
+                if(args.length >= 2){
+                    var yes = args.splice(1, args.length).join(" ");
+                    if(yes.toLowerCase() == "yes"){
+                        if(users.hasOwnProperty(message.author.id)){
+
+                            var g = "";
+
+                            if(users[message.author.id]["guild"] == undefined){
+                                users[message.author.id]["guild"] = "";
+                            }else{
+                                g = users[message.author.id]["guild"];
+                            }
+
+                            delete users[message.author.id];
+                            create(message.author.id, message.author.name);
+                            users[message.author.id]["guild"] = g;
+                            bot.sendMessage(message, message.author.name+" reset their character.");
+                            saveUsers();
+                        }else{
+                            bot.sendMessage(message, message.author.name+" tried to reset their character but they haven't started their adventure.");
+                            return;
+                        }
+                    }
+                }
+            }catch(e){
+                bot.sendMessage(message, "Whoops! An error occured! Please report it in the Official server! ```js\n"+e.name + ': ' + e.message+" "+e.stack.split("\n")[4]+"```");
+            }
+        },
+        "desc": "Resets your character.",
+        "usage": "reset ``yes``",
+        "cooldown": 10
+    },
+    "gwd": {
+        process: function(args, message, bot){
+            try{
+                if(args.length >= 2){
+                    var amt = 0;
+                    if(Number(args[1])){
+                        amt = Number(args[1]);
+                        if(users[message.author.id] != undefined){
+                            var usr = users[message.author.id];
+                            if(usr["guild"] == undefined){
+                                usr["guild"] = "";
+                            }
+
+                            if(usr["guild"].length > 0){
+                                var guild = guilds[usr["guild"]];
+
+                                if(guild["owner"] == message.author.id || guild["elder"].indexOf(message.author.id) > -1) {
+                                    if(guild["gold"] >= amt){
+                                        usr["gold"] += amt;
+                                        guild["gold"] -= amt;
+
+                                        bot.sendMessage(message, message.author.name+" withdrew "+amt+" gold from their guild and the guild now has "+guild["gold"]+" gold.");
+                                        saveGuilds();
+                                        saveUsers();
+                                        return;
+
+                                    }else{
+                                        bot.sendMessage(message, message.author.name+" tried to withdraw "+amt+" gold from their guild, but the guild only has "+guild["gold"]+" gold.");
+                                    }
+                                }else{
+                                    bot.sendMessage(message, message.author.name+", you can't withdraw from a guild.");
+                                }
+
+                            }else{
+                                bot.sendMessage(message, message.author.name+" tried to withdraw gold from a guild, but they're not in one.");
+                            }
+                        }
+                    }else{
+                        bot.sendMessage(message, message.author.name+" tried to withdraw a invalid amount of gold.");
+                    }
+                }
+            }catch(e){
+                bot.sendMessage(message, "Whoops! An error occured! Please report it in the Official server! ```js\n"+e.name + ': ' + e.message+" "+e.stack.split("\n")[4]+"```");
+                return;
+            }
+        },
+        "desc": "Withdraw gold from your guild.",
+        "usage": "gwd ``amount``",
+        "cooldown": 10
     }
 };
 
