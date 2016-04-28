@@ -20,6 +20,7 @@
     "fuzzaldrin": "^2.1.0",
     "fuzzy-matching": "^0.4.3",
     "moment": "^2.11.2",
+    "numberstrings": "^1.0.0",
     "request": "^2.72.0",
     "useful-module": "0.0.6"
   }

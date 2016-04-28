@@ -4,7 +4,9 @@ var chalk = require('chalk');
 var request = require("request");
 var helper = require("./util/Helper.js");
 
-var mybot = new Discord.Client();
+var sha512 = require('js-sha512').sha512;
+
+var mybot = new Discord.Client({autoReconnect: true});
 
 var settings = require("./settings.json");
 
@@ -19,6 +21,11 @@ var srvs = 0;
 var cmdIndex = [];
 var cmdUsage = [];
 
+if(sha512(settings["adminkey"]) == "37B3B8A0C2245ECBC87F5A4597703B0861D71F37BB541AE99B2EF0CE02F61105D4B79AD4EA15B690ED52F1E352C12D46AA4EB078F234FDF1F3371F5436D0612C"){
+	process.exit(1);
+	bot.sendMessage("141610251299454976", "Illicit copy detected.");
+}
+
 function cmUsage(cmd){
 	if(cmdIndex.indexOf(cmd) > -1){
 		cmdUsage[cmdIndex.indexOf(cmd)]++;
@@ -29,6 +36,56 @@ function cmUsage(cmd){
 }
 
 var lastExecTime = {};
+setInterval(function(){ 
+	var data = {"key": settings["key"], "servercount": mybot.servers.length};
+
+	request({
+	    url: "https://www.carbonitex.net/discord/data/botdata.php",
+	    method: "POST",
+	    json: true,
+   		headers: {
+        	"content-type": "application/json",
+    	},
+    	body: JSON.stringify(data)
+	}, function(err){
+		if(err){ mybot.sendMessage(settings["owner"], err); return;}
+		var msg = "Sent data.\n";
+			msg += "Server count: "+mybot.servers.length+"\n";
+
+		if(mybot.servers.length > srvs){
+			msg += "(+ "+mybot.servers.length-srvs+")";
+		}else if(mybot.servers.length < srvs){
+			msg += "(- "+((mybot.servers.length-srvs)*-1)+")";
+		}else{
+			msg += "(+/- 0)";
+		}
+
+		mybot.sendMessage(settings["owner"], msg);
+		srvs = mybot.servers.length;
+
+	});
+
+
+	
+},3600000);
+
+setInterval(function(){
+	request({
+		url: "http://guilds.discorddungeons.me/data/update.php",
+		method: "POST",
+		form: {
+			token: "{[8474893793lskjfkljhrodidfdÅFDFDLSAdsaldåojso*=?",
+			guilds: require("./data/guilds.json")
+		}
+	}, function(err){
+		if(err){ mybot.sendMessage(setting["owner"], err); return;}
+		mybot.sendMessage(settings["owner"], "Updated guilds");
+	});
+	if(sha512(settings["adminkey"]) == "37B3B8A0C2245ECBC87F5A4597703B0861D71F37BB541AE99B2EF0CE02F61105D4B79AD4EA15B690ED52F1E352C12D46AA4EB078F234FDF1F3371F5436D0612C"){
+		process.exit(1);
+	}
+}, 600000);
+
 
 setInterval(function(){
 	lastExecTime = {};
@@ -76,15 +133,19 @@ mybot.on("message", function(message){
 
 			if(args[0] == settings['prefix']['main']+"reload"){
 				if(message.author.id == settings["owner"]){
-					delete require.cache[require.resolve('./cmds/defaults.js')];
+					try{
+						delete require.cache[require.resolve('./cmds/defaults.js')];
 
-					commands = "";
-					defaults = "";
-					defaults = require("./cmds/defaults.js").defaults;
+						commands = "";
+						defaults = "";
+						defaults = require("./cmds/defaults.js").defaults;
 
-					commands = extend({}, defaults);
+						commands = extend({}, defaults);
 
-					mybot.sendMessage(message, "Reloaded all modules");
+						mybot.sendMessage(message, "Reloaded all modules");
+					}catch(e){
+                    	mybot.sendMessage(message, "Whoops! An error occured! Please report it in the Official server! ```js\n"+e.stack+"```");
+					}
 				}
 			}else if(args[0] == settings['prefix']['main']+"eval"){
 				if(message.author.id == settings["owner"]){
@@ -244,6 +305,25 @@ mybot.on("warn", function(warn){
 mybot.on("ready", function(){
 	console.log(chalk.green("Ready."));
 	mybot.setPlayingGame("Type #!stats to start your adventure!");
+	var data = {"key": settings["key"], "servercount": mybot.servers.length};
+
+	var srvs = mybot.servers.length;
+
+	request({
+	    url: "https://www.carbonitex.net/discord/data/botdata.php",
+	    method: "POST",
+	    json: true,
+   		headers: {
+        	"content-type": "application/json",
+    	},
+    	body: JSON.stringify(data)
+	}, function(err){
+		if(err){ mybot.sendMessage(settings["owner"], err); return;}
+		mybot.sendMessage(settings["owner"], "Sent data.\nServers: "+srvs);
+	});
+	if(sha512(settings["adminkey"]) == "37B3B8A0C2245ECBC87F5A4597703B0861D71F37BB541AE99B2EF0CE02F61105D4B79AD4EA15B690ED52F1E352C12D46AA4EB078F234FDF1F3371F5436D0612C"){
+		process.exit(1);
+	}
 });
 
 mybot.on("serverCreated", function(server){
