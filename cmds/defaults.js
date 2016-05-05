@@ -14,7 +14,7 @@ var guilds = require("../data/guilds.json");
 var gicons = require("../data/gicons.json");
 var gitems = require("../data/gitems.json");
 var achievements = require("../data/achievements.json");
-
+var ignored = require("../data/ignored.json");
 
 
 if(sha512(settings["adminkey"]) == "37B3B8A0C2245ECBC87F5A4597703B0861D71F37BB541AE99B2EF0CE02F61105D4B79AD4EA15B690ED52F1E352C12D46AA4EB078F234FDF1F3371F5436D0612C"){
@@ -89,6 +89,11 @@ function checkAchievements(bot, message){
                     }
                 }else if(achievements[id]["crit"].hasOwnProperty("mindeaths")){
                     if(users[user]["deaths"] >= achievements[id]["crit"]["mindeaths"]){
+                        users[user]["achievements"].push(id);
+                        chieves.push("``"+achievements[id]["name"]+"``");
+                    }
+                }else if(achievements[id]["crit"].hasOwnProperty("minlevel")){
+                    if(users[user]["level"] >= achievements[id]["crit"]["minlevel"]){
                         users[user]["achievements"].push(id);
                         chieves.push("``"+achievements[id]["name"]+"``");
                     }
@@ -187,6 +192,16 @@ function getLevelUp(level){
         base = 100;
     }else if(level >= 90){
         base = 200;
+    }else if(level >= 100){
+        base = 250;
+    }else if(level >= 150){
+        base = 350;
+    }else if(level >= 200){
+        base = 400;
+    }else if(level >= 300){
+        base = 450;
+    }else if(level >= 500){
+        base = 500;
     }
 
     return (base*level*(1+level));
@@ -205,7 +220,8 @@ function adventure(args, message, bot){
             return;
         }
 
-        var num = helper.rInt(1, 6);
+        //var num = helper.rInt(1, 6);
+        var num = Math.random()*5+1;
         var user = message.author.id;
         var userLoose = 0;
         var advLoose = 0;
@@ -214,24 +230,14 @@ function adventure(args, message, bot){
         var adv = adventures[user];
         var wep = getWep(users[user]["weapon"])["weapon"];
 
-        if(num == 1){
-            userLoose = Math.round(helper.rInt(adv["dmg"]["min"],(adv["dmg"]["max"])));
-            advLoose = Math.round(helper.rInt(wep["dmg"]["min"],(wep["dmg"]["max"] * 0.2)));
-        }else if(num == 2){
-            userLoose = Math.round(helper.rInt(adv["dmg"]["min"],(adv["dmg"]["max"] * 0.4)));
-            advLoose = Math.round(helper.rInt(wep["dmg"]["min"],(wep["dmg"]["max"] * 0.3)));
-        }else if(num == 3){
-            userLoose = Math.round(helper.rInt(adv["dmg"]["min"],(adv["dmg"]["max"] * 0.5)));
-            advLoose = Math.round(helper.rInt(wep["dmg"]["min"],(wep["dmg"]["max"] * 0.4)));
-        }else if(num == 4){
-            userLoose = Math.round(helper.rInt(adv["dmg"]["min"],(adv["dmg"]["max"] * 0.7)));
-            advLoose = Math.round(helper.rInt(wep["dmg"]["min"],(wep["dmg"]["max"] * 0.8)));
-        }else if(num == 5){
-            userLoose = Math.round(helper.rInt(adv["dmg"]["min"],(adv["dmg"]["max"] * 0.8)));
-            advLoose = Math.round(helper.rInt(wep["dmg"]["min"],(wep["dmg"]["max"] * 0.9)));
-        }else if(num == 6){
-            userLoose = Math.round(helper.rInt(adv["dmg"]["min"],(adv["dmg"]["max"] * 0.9)));
-            advLoose = Math.round(helper.rInt(wep["dmg"]["min"],(wep["dmg"]["max"])));
+        var userLoose = Math.round(adv["dmg"]["min"] + (adv["dmg"]["max"] - adv["dmg"]["min"])*(1 - (num - 1) / 5));
+        var advLoose = Math.round(wep["dmg"]["min"] + (wep["dmg"]["max"] - wep["dmg"]["min"])*((num - 1) / 5));
+
+        advLoose+= Math.floor(Math.sqrt(users[user]["stats"]["strength"]) * 0.25);
+        userLoose -= Math.floor(Math.sqrt(users[user]["stats"]["defense"]) * 0.25);
+
+        if(userLoose < 0){
+            userLoose = 1;
         }
 
         if(adv.hasOwnProperty("boost")){
@@ -244,13 +250,6 @@ function adventure(args, message, bot){
                 }
 
             }
-        }
-
-        advLoose+= Math.floor(Math.sqrt(users[user]["stats"]["strength"]) * 0.25);
-        userLoose -= Math.floor(Math.sqrt(users[user]["stats"]["defense"]) * 0.25);
-
-        if(userLoose < 0){
-            userLoose = 1;
         }
 
         users[user]["hp"] -= userLoose;
@@ -274,7 +273,7 @@ function adventure(args, message, bot){
             if(users[user]["hp"] <= 0){
                 users[user]["hp"] =(users[user]["maxhp"] / 4)
                 if(users[user]["hp"] <= 0){
-                    users[user]["hp"] = 50
+                    users[user]["hp"] = 50;
                     console.log("["+message.author.name+"] Fixed a health bug!");
                 }else{
                     console.log("["+message.author.name+"] Fixed a health bug!");
@@ -284,12 +283,12 @@ function adventure(args, message, bot){
             fs.writeFile("./data/users.json", JSON.stringify(users), 'utf8',
                 function(err){
                     if(err){
-                        throw err;
+                        bot.sendMessage(message, "Error saving users. ```js\n"+err+"```");
                     }
                     delete adventures[message.author.id];
                     delete adv;
 
-                    saveAdventures();
+                    //bot.sendMessage(message, bot);
 
                     var head = "======== [R.I.P "+message.author.name+"] ========";
                     var msg = head+"\n";
@@ -317,7 +316,12 @@ function adventure(args, message, bot){
             var level = users[user]["level"];
 
             var gWin = Math.round(((Math.sqrt(luck)+level) * 0.25) * helper.rInt(adv["drops"]["gold"]["min"], adv["drops"]["gold"]["max"]));
-            var xpWin = Math.round(((Math.sqrt(luck)+level) * 0.1) * helper.rInt(adv["drops"]["xp"]["min"], adv["drops"]["xp"]["max"]));
+            var xpWin = Math.round(((Math.sqrt(luck)+level) * 0.25) * helper.rInt(adv["drops"]["xp"]["min"], adv["drops"]["xp"]["max"]));
+
+            if(xpWin <= 0){
+                xpWin = 1;
+            }
+
             var levelup = getLevelUp(level);
 
             users[user]["gold"]+= gWin;
@@ -333,19 +337,19 @@ function adventure(args, message, bot){
 
             fs.writeFile("./data/users.json", JSON.stringify(users), 'utf8', function(err){
                     if(err){
-                        console.dir(err);
+                        bot.sendMessage(message, "Error saving users. ```js\n"+err+"```");
                     }
                     if(delete adventures[message.author.id]){
                         console.dir("OK");
                         delete adventures[message.author.id];
 
-                        saveAdventures();
+                        //bot.sendMessage(message, bot);
 
                         var head = "!======== ["+message.author.name+"'s adventure] ========!";
 
 
                         var msg = "```diff\n"+head+"\n";
-                        msg+= "Rolled a "+num+".\n";
+                        msg+= "Rolled a "+Math.round(num)+".\n";
                         msg+= "- Lost "+userLoose+"HP.\n";
                         msg+= "+ Dealt "+advLoose+"HP damage.\n";
                         msg+= "+ "+message.author.name+" has "+formatNumber(users[user]["hp"])+"/"+formatNumber(users[user]["maxhp"])+"HP left.\n";
@@ -354,6 +358,11 @@ function adventure(args, message, bot){
 
                         if(users[user]["xp"] >= levelup){
                             msg+= "\n+ "+message.author.name+" Leveled up! They've been awarded with 5 attribute points, and, along with their max HP increasing by 50, they've been fully healed!";
+                            if(message.channel.server != null && message.channel.server != undefined){
+                                if(message.channel.server.id == "172382467385196544"){
+                                    bot.setNickname(message.channel.server, message.author.name+" [Lvl. "+users[user]["level"]+"]", message.author.id);
+                                }
+                            }
                         }
 
                         checkAchievements(bot, message);
@@ -382,7 +391,7 @@ function adventure(args, message, bot){
                 }
                 var head = "!======== ["+message.author.name+"'s adventure] ========!";
                 var msg = "```diff\n"+head+"\n";
-                msg+= "Rolled a "+num+".\n";
+                msg+= "Rolled a "+Math.round(num)+".\n";
                 msg+= "- Lost "+userLoose+"HP.\n";
                 msg+= "+ Dealt "+advLoose+"HP damage.\n";
                 msg+= "+ "+message.author.name+" has "+formatNumber(users[user]["hp"])+"/"+formatNumber(users[user]["maxhp"])+" HP left.\n";
@@ -395,11 +404,9 @@ function adventure(args, message, bot){
                 }
 
                 msg+= tmpm+"!```\n";
-                msg+= "Type ``"+settings["prefix"]["main"]+
-                    "adventure 1`` to run or ``"+settings["prefix"][
-                        "main"]+"adventure 2`` to fight again.";
+                msg+= "Type ``"+settings["prefix"]["main"]+"adventure 1`` to run or ``"+settings["prefix"]["main"]+"adventure 2`` to fight again.";
 
-                saveAdventures();
+                //bot.sendMessage(message, bot);
 
                 bot.sendMessage(message, msg);
             });
@@ -416,7 +423,7 @@ function adventure(args, message, bot){
 function create(user, name){
 
         users[user] ={
-            "items": ["1"],
+            "inv": {"1": 1},
             "hp": 50,
             "maxhp": 50,
             "level": 1,
@@ -500,74 +507,127 @@ function saveMobs(){
     });
 }
 
-function saveAdventures(){
-        fs.writeFile("./data/adventures.json", JSON.stringify(adventures),
-            'utf8', function(err){
-                if(err){
-                    console.dir(err);
-                }
-            });
+function saveAdventures(bot, message){
+    try{
+        fs.writeFile("./data/adventures.json", JSON.stringify(adventures),'utf8', function(err){ 
+            if(err){bot.sendMessage(message, "Error saving adventures. ```js\n"+err+"```"); return; };
+        });
+    }catch(e){
+        bot.sendMessage(message, "Whoops. ```js\n"+e.stack+"```");
     }
+}
     //End Save Data
     //Use Item
 
-function use(item, message, bot){
+function use(item, message, bot, amt){
     try{
         var user = message.author.id;
         var itm = items[item];
+
+        var usr = users[message.author.id];
+
+        if(usr != undefined){
+
+            if(!usr.hasOwnProperty("inv")){
+                usr["inv"] = {};
+            }
+
+            if(usr["items"] != undefined){
+                for(i=0;i<usr["items"].length;i++){
+                    usr["items"].splice(i, 1);
+                    var search = usr["items"][i];
+                    var count = usr["items"].reduce(function(n, val){
+                        return n+(val === search);
+                    }, 0);
+
+                    if(!usr["inv"].hasOwnProperty(usr["items"][i])){
+                        usr["inv"][usr["items"][i]] = count;
+                    }
+                }
+            }
+
+            for(i=0;i<Object.keys(usr["inv"]).length;i++){
+                var key = Object.keys(usr["inv"])[i];
+                console.log(usr["inv"][key]);
+                var ps = usr["inv"][key]+" x "+items[key]["name"];
+                if(itms.indexOf(ps) == -1){
+                    itms.push(ps);
+                }
+            }
+        }
+
         if(users[user]["level"] >= itm["level"]){
-            if(users[user]["items"].indexOf(item) > -1){
-                users[user]["items"].splice(users[user]["items"].indexOf(item),1);
-
-                if(itm["type"] == "potion"){
-                    var msg = ""+message.author.name+" used a potion and gained ";
-                    if(itm["potion"].hasOwnProperty("heal")){
-                        var heal = itm["potion"]["heal"];
-                        if(users[user]["hp"] >= users[user]["maxhp"]){
-                            bot.sendMessage(message, message.author.name+" tried to heal, but they're already on full health.");
-                            return;
-                        }
-
-                        var msg = message.author.name+" used "+itm["prefix"]+" "+itm["name"];
-
-                        var tot = 0;
-
-                        if(users[user]["maxhp"] - users[user]["hp"] > itm["potion"]["heal"]){
-                            heal = itm["potion"]["heal"];
-                        }else{
-                            heal = users[user]["maxhp"] - users[user]["hp"];
-                        }
-
-                        users[user]["hp"] += heal;
-                        tot += heal;
-
-                        msg+= " and got "+heal+"HP. ("+users[user]["hp"]+"/"+users[user]["maxhp"]+"HP)";
-
-                        bot.sendMessage(message, msg);
-                        saveUsers();
-                        return;
-
-                    }else if(itm["potion"].hasOwnProperty("boost")){
-                        if(itm["potion"]["boost"].hasOwnProperty("strength")){
-                            if(adventures.hasOwnProperty(user)){
-                                if(itm["potion"]["temp"]){
-                                    adventures["boost"] ={"strength": itm["boost"]["strength"],"last": itm["potion"]["last"]};
-                                    msg+= "a "+itm["boost"]["strength"]+"x strength boost for "+itm["potion"]["last"]+" turns. ";
-                                }
-                            }
-                            msg += "\n(Note, Strength potions are bugged at the time. They are getting reworked though.)";
-                        }
+            if(users[user]["inv"].hasOwnProperty(item)){
+                if(users[user]["inv"][item] > 0){
+                    if(itm["type"] != "dummy"){
+                        users[user]["inv"][item] -= amt;
                     }
 
-                    saveUsers();
-                    bot.sendMessage(message, msg);
+                    if(itm["type"] == "potion"){
+                        var msg = ""+message.author.name+" used a potion and gained ";
+                        if(itm["potion"].hasOwnProperty("heal")){
+                            var heal = itm["potion"]["heal"];
+                            if(users[user]["hp"] >= users[user]["maxhp"]){
+                                bot.sendMessage(message, message.author.name+" tried to heal, but they're already on full health.");
+                                return;
+                            }
 
+                            //var msg = message.author.name+" used "+itm["prefix"]+" "+itm["name"];
+
+                            var tot = 0;
+
+                            var msg = message.author.name+" used ";
+
+                            if(amt > 1){
+                                msg += amt+" "+itm["name"]+" and got ";
+                            }else{
+                                msg += itm["prefix"]+" "+itm["name"]+" and got "; 
+                            }
+
+                            //var tot = 0;
+
+                            for(i=0;i<amt;i++){
+                                //users[user]["items"].splice(users[user]["items"].indexOf("1"), 1);
+                                users[user]["inv"][item]--;
+                                var heal = itm["potion"]["heal"];
+                                if(users[user]["maxhp"] - users[user]["hp"] > itm["potion"]["heal"]){
+                                    heal = itm["potion"]["heal"];
+                                }else{
+                                    heal = users[user]["maxhp"] - users[user]["hp"];
+                                }
+
+                                users[user]["hp"] += heal;
+                                tot += heal;
+                            }
+
+                            msg+= tot+"HP. ("+users[user]["hp"]+"/"+users[user]["maxhp"]+"HP)";
+
+                            bot.sendMessage(message, msg);
+                            saveUsers();
+                            return;
+
+                        }else if(itm["potion"].hasOwnProperty("boost")){
+                            if(itm["potion"]["boost"].hasOwnProperty("strength")){
+                                if(adventures.hasOwnProperty(user)){
+                                    if(itm["potion"]["temp"]){
+                                        adventures["boost"] ={"strength": itm["boost"]["strength"],"last": itm["potion"]["last"]};
+                                        msg+= "a "+itm["boost"]["strength"]+"x strength boost for "+itm["potion"]["last"]+" turns. ";
+                                    }
+                                }
+                                msg += "\n(Note, Strength potions are bugged at the time. They are getting reworked though.)";
+                            }
+                        }
+
+                        saveUsers();
+                        bot.sendMessage(message, msg);
+
+                    }
+                }else{
+                    bot.sendMessage(message, message.author.name+" tried to use a item they don't have.");
                 }
             }else{
-                bot.sendMessage(message, message.author.name+" tried to use a item they don't have.");
+                bot.sendMessage(message, message.author.name+" tried to use a item they're not skilled enough to use.");
             }
-        }else{
-            bot.sendMessage(message, message.author.name+" tried to use a item they're not skilled enough to use.");
         }
     }catch(e){
         bot.sendMessage(message, "Whoops! An error occured! Please report it in the Official server! ```js\n"+e.name + ': ' + e.message+" "+e.stack.split("\n")[4]+"```");
@@ -628,6 +688,40 @@ function buy(item, message, bot, amt){
 
             var msg = "";
 
+            var usr = users[message.author.id];
+
+            var itms = [];
+
+            if(!usr.hasOwnProperty("inv")){
+                usr["inv"] = {};
+            }
+
+            if(usr["items"] != undefined){
+
+                for(i=0;i<usr["items"].length;i++){
+                    usr["items"].splice(i, 1);
+                    var search = usr["items"][i];
+                    var count = usr["items"].reduce(function(n, val){
+                        return n+(val === search);
+                    }, 0);
+
+                    if(!usr["inv"].hasOwnProperty(usr["items"][i])){
+                        usr["inv"][usr["items"][i]] = count;
+                    }
+                }
+            }
+
+            for(i=0;i<Object.keys(usr["inv"]).length;i++){
+                var key = Object.keys(usr["inv"])[i];
+                console.log(usr["inv"][key]);
+                if(key != undefined && key != "undefined"){
+                    var ps = usr["inv"][key]+" x "+items[key]["name"];
+                    if(itms.indexOf(ps) == -1){
+                        itms.push(ps);
+                    }
+                }
+            }
+
             if(users[user]["level"] >= itm["level"]){
 
                 if(items[item]["cost"] > 0){
@@ -653,12 +747,21 @@ function buy(item, message, bot, amt){
                             msg = message.author.name+" bought "+items[item]["prefix"]+" "+items[item]["name"]+" for "+items[item]["cost"]+" gold.";
                         }else{
                             if(amt > 1){
-                                for(i=0;i<amt;i++){
-                                    users[user]["items"].push(item);
+                                if(users[user]["inv"].hasOwnProperty(item)){
+                                    users[user]["inv"][item] += amt;
+                                }else{
+                                    users[user]["inv"][item] = amt;
                                 }
+                                /*for(i=0;i<amt;i++){
+                                    users[user]["items"].push(item);
+                                }*/
                                 msg = message.author.name+" bought "+amt+" "+items[item]["name"]+"s for "+cost+" gold.";
                             }else{
-                                users[user]["items"].push(item);
+                                if(users[user]["inv"].hasOwnProperty(item)){
+                                    users[user]["inv"][item] += 1;
+                                }else{
+                                    users[user]["inv"][item] = 1;
+                                }
                                 msg = message.author.name+" bought "+items[item]["prefix"]+" "+items[item]["name"]+" for "+items[item]["cost"]+" gold.";
                             }
                         }
@@ -975,52 +1078,77 @@ var defaults ={
     //Stats Command
     "stats":{
         process: function(args, message, bot){
+            try{
+                var user = message.author.id;
+                var head = "!======== ["+message.author.name+"'s stats] ========!";
+                var msg = "```diff\n"+head;
+                var usr;
+                if(Object.keys(users).indexOf(user) > -1){
+                    usr = users[user];
+                    if(users[message.author.id]["name"] != message.author.name){
+                        users[message.author.id]["name"] = message.author.name;
+                    }
 
-            var user = message.author.id;
-            var head = "!======== ["+message.author.name+"'s stats] ========!";
-            var msg = "```diff\n"+head;
-            var usr;
-            if(Object.keys(users).indexOf(user) > -1){
-                usr = users[user];
-                if(users[message.author.id]["name"] != message.author.name){
-                    users[message.author.id]["name"] = message.author.name;
+                    if(!usr.hasOwnProperty("inv")){
+                        usr["inv"] = {};
+                    }
+
+                }else{
+                    create(user, message.author.name);
+                    msg+= "\n% Welcome new player. Please use '"+settings['prefix']['main']+"assign (attribute) (points)' to assign your "+users[user]["points"]+" attribute points.";
+                    usr = users[user];
                 }
-            }else{
-                create(user, message.author.name);
-                msg+= "\n% Welcome new player. Please use '"+settings['prefix']['main']+"assign (attribute) (points)' to assign your "+users[user]["points"]+" attribute points.";
-                usr = users[user];
-            }
 
-            var itms = [];
+                var itms = [];
 
-            for(i = 0; i < usr["items"].length; i++){
-                var search = usr["items"][i];
-                var count = usr["items"].reduce(function(n, val){
-                    return n+(val === search);
-                }, 0);
-                var ps = count+" x "+items[usr["items"][i]]["name"];
-                if(itms.indexOf(ps) == -1){
-                    itms.push(ps);
+                if(usr["items"] != undefined){
+
+                    for(i=0;i<usr["items"].length;i++){
+                        usr["items"].splice(i, 1);
+                        var search = usr["items"][i];
+                        var count = usr["items"].reduce(function(n, val){
+                            return n+(val === search);
+                        }, 0);
+
+                        if(!usr["inv"].hasOwnProperty(usr["items"][i])){
+                            if(usr["items"][i] != undefined){
+                                usr["inv"][usr["items"][i]] = count;
+                            }
+                        }
+                    }
                 }
+
+                for(i=0;i<Object.keys(usr["inv"]).length;i++){
+                    var key = Object.keys(usr["inv"])[i];
+                    console.log("stats key "+key+": "+usr["inv"][key]);
+                    if(key != undefined && key != "undefined"){
+                        var ps = usr["inv"][key]+" x "+items[key]["name"];
+                        if(itms.indexOf(ps) == -1){
+                            itms.push(ps);
+                        }
+                    }
+                }
+
+                msg+= "\n+ Health: "+formatNumber(usr["hp"])+"/"+formatNumber(usr["maxhp"])+"HP.";
+                msg+= "\n+ Items: "+itms.sort().join(", ");
+                msg+= "\n+ Weapon: "+getWep(usr["weapon"])["name"];
+                msg+= "\n+ Level "+usr["level"]+"("+formatNumber(usr["xp"])+"/"+formatNumber(getLevelUp(usr["level"]))+"XP) | "+formatNumber(usr['gold'])+" Gold";
+                msg+= "\n+ Killed "+usr["kills"]+" enemies. Slain "+usr["deaths"]+" times.";
+                msg+= "\n+ Strength: "+usr["stats"]["strength"]+", Defense: "+usr["stats"]["defense"]+", Charisma: "+usr["stats"]["charisma"]+", Luck: "+usr["stats"]["luck"]+". Unassigned: "+usr["points"]+" points.";
+
+                var tmpm = "";
+
+                for(i = 0; i < head.length - 2; i++){
+                    tmpm+= "=";
+                }
+
+                msg+= "\n!"+tmpm+"!```";
+
+                bot.sendMessage(message, msg);
+                saveUsers();
+            }catch(e){
+                bot.sendMessage(message, "Whoops! An error occured! Please report it in the Official server! ```js\n"+e.stack+"```");
             }
-
-            msg+= "\n+ Health: "+formatNumber(usr["hp"])+"/"+formatNumber(usr["maxhp"])+"HP.";
-            msg+= "\n+ Items: "+itms.sort().join(", ");
-            msg+= "\n+ Weapon: "+getWep(usr["weapon"])["name"];
-            msg+= "\n+ Level "+usr["level"]+"("+formatNumber(usr["xp"])+"/"+formatNumber(getLevelUp(usr["level"]))+"XP) | "+formatNumber(usr['gold'])+" Gold";
-            msg+= "\n+ Killed "+usr["kills"]+" enemies. Slain "+usr["deaths"]+" times.";
-            msg+= "\n+ Strength: "+usr["stats"]["strength"]+", Defense: "+usr["stats"]["defense"]+", Charisma: "+usr["stats"]["charisma"]+", Luck: "+usr["stats"]["luck"]+". Unassigned: "+usr["points"]+" points.";
-
-            var tmpm = "";
-
-            for(i = 0; i < head.length - 2; i++){
-                tmpm+= "=";
-            }
-
-            msg+= "\n!"+tmpm+"!```";
-
-            bot.sendMessage(message, msg);
-            saveUsers();
         },
         "desc": "Shows your RPG stats",
         "usage": "stats",
@@ -1088,24 +1216,60 @@ var defaults ={
                 }
             }
 
+            var usr = users[message.author.id];
+
             var itms = [];
             var count = 0;
 
-            for(i=0;i<users[user]["items"].length;i++){
+            /*for(i=0;i<users[user]["items"].length;i++){
                 var search = "1";
                 var count = users[user]["items"].reduce(function(n, val){
                     return n+(val === search);
                 }, 0);
+            }*/
+
+            if(!usr.hasOwnProperty("inv")){
+                usr["inv"] = {};
             }
 
-            if(amt <= count){
+            if(usr["items"] != undefined){
+
+                for(i=0;i<usr["items"].length;i++){
+                    usr["items"].splice(i, 1);
+                    var search = usr["items"][i];
+                    var count = usr["items"].reduce(function(n, val){
+                        return n+(val === search);
+                    }, 0);
+
+                    if(!usr["inv"].hasOwnProperty(usr["items"][i])){
+                        usr["inv"][usr["items"][i]] = count;
+                    }
+                }
+
+                for(i=0;i<Object.keys(usr["inv"]).length;i++){
+                    var key = Object.keys(usr["inv"])[i];
+                    if(key != undefined && key != "undefined"){
+                        console.log("heal"+i+": "+key);
+                        var ps = usr["inv"][key]+" x "+items[key]["name"];
+                        if(itms.indexOf(ps) == -1){
+                            itms.push(ps);
+                        }
+                    }
+                }
+            }
+
+            if(usr["inv"].hasOwnProperty("1")){
+                count = usr["inv"]["1"];
+            }
+
+            if(amt <= count && count > 0){
 
                 if(users[user]["hp"] >= users[user]["maxhp"]){
                     bot.sendMessage(message, message.author.name+" tried to heal, but they're already on full health.");
                     return;
                 }
 
-                if(users[user]["items"].indexOf("1") > -1){
+                if(users[user]["inv"].hasOwnProperty("1") > -1){
                     
                     var msg = message.author.name+" used ";
 
@@ -1118,7 +1282,8 @@ var defaults ={
                     var tot = 0;
 
                     for(i=0;i<amt;i++){
-                        users[user]["items"].splice(users[user]["items"].indexOf("1"), 1);
+                        //users[user]["items"].splice(users[user]["items"].indexOf("1"), 1);
+                        users[user]["inv"]["1"]--;
                         var heal = 50;
                         if(users[user]["maxhp"] - users[user]["hp"] > 50){
                             heal = 50;
@@ -1158,19 +1323,59 @@ var defaults ={
     "use":{
         process: function(args, message, bot){
 
+            var amt = 1;
+
             if(!users[message.author.id] == undefined){
                 if(users[message.author.id]["name"] != message.author.name){
                     user[message.author.id]["name"] = message.author.name;
                 }
             }
 
-            var item = args.splice(1, args.length).join(" ");
             var usr = users[message.author.id];
+
+            if(!usr.hasOwnProperty("inv")){
+                usr["inv"] = {};
+            }
+
+            if(usr["items"] != undefined){
+
+                for(i=0;i<usr["items"].length;i++){
+                    usr["items"].splice(i, 1);
+                    var search = usr["items"][i];
+                    var count = usr["items"].reduce(function(n, val){
+                        return n+(val === search);
+                    }, 0);
+
+                    if(!usr["inv"].hasOwnProperty(usr["items"][i])){
+                        usr["inv"][usr["items"][i]] = count;
+                    }
+                }
+            }
+
+            itms = [];
+
+            for(i=0;i<Object.keys(usr["inv"]).length;i++){
+                var key = Object.keys(usr["inv"])[i];
+                console.log(usr["inv"][key]);
+                var ps = usr["inv"][key]+" x "+items[key]["name"];
+                if(itms.indexOf(ps) == -1){
+                    itms.push(ps);
+                }
+            }
+
+            var item = args.splice(1, args.length).join(" ");
+
+            var matches = item.match(/\d+$/);
+
+            if(matches){
+                amt = Number(matches[0]);
+                item = item.replace(/\d+$/, "").replace(/\s*$/, "");
+            }
 
             var uitems = [];
 
-            for(i = 0; i < usr["items"].length; i++){
-                var nam = items[usr["items"][i]]["name"];
+            for(i=0;i<Object.keys(usr["inv"]).length;i++){
+                var nam = items[Object.keys(usr["inv"])[i]]["name"];
                 console.log(nam);
                 if(uitems.indexOf(nam) == -1){
                     uitems.push(nam);
@@ -1179,10 +1384,9 @@ var defaults ={
 
             var results = filter.filter(uitems, item.toLowerCase());
 
-            for(i = 0; i < Object.keys(items).length; i++){
-                if(items[Object.keys(items)[i]]["name"].toLowerCase() ==
-                    item.toLowerCase()){
-                    use(Object.keys(items)[i], message, bot);
+            for(i=0;i<Object.keys(items).length;i++){
+                if(items[Object.keys(items)[i]]["name"].toLowerCase() == item.toLowerCase()){
+                    use(Object.keys(items)[i], message, bot, amt);
                     return;
                 }
             }
@@ -1191,7 +1395,7 @@ var defaults ={
                 var itmFound = [];
                 var msg = "";
                 msg+= "Found "+results.length+" items.\n";
-                for(i = 0; i < results.length; i++){
+                for(i=0;i<results.length;i++){
                     itmFound.push("``"+results[i]+"``");
                 }
                 msg+= itmFound.sort().join(", ");
@@ -1211,11 +1415,40 @@ var defaults ={
     //Buy Command
     "buy":{
         process: function(args, message, bot){
-
             if(!users[message.author.id] == undefined){
                 if(users[message.author.id]["name"] != message.author.name){
                     user[message.author.id]["name"] = message.author.name;
                 }
+
+                var usr = users[message.author.id];
+
+                if(!usr.hasOwnProperty("inv")){
+                    usr["inv"] = {};
+                }
+
+                if(usr["items"] != undefined){
+                    for(i=0;i<usr["items"].length;i++){
+                        usr["items"].splice(i, 1);
+                        var search = usr["items"][i];
+                        var count = usr["items"].reduce(function(n, val){
+                            return n+(val === search);
+                        }, 0);
+
+                        if(!usr["inv"].hasOwnProperty(usr["items"][i])){
+                            usr["inv"][usr["items"][i]] = count;
+                        }
+                    }
+                }
+
+                for(i=0;i<Object.keys(usr["inv"]).length;i++){
+                    var key = Object.keys(usr["inv"])[i];
+                    console.log(usr["inv"][key]);
+                    var ps = usr["inv"][key]+" x "+items[key]["name"];
+                    if(itms.indexOf(ps) == -1){
+                        itms.push(ps);
+                    }
+                }
+
             }
 
             var item = args.splice(1, args.length).join(" ").replace(/\s*$/, "");
@@ -1274,15 +1507,15 @@ var defaults ={
                 var user = message.author.id;
 
                 var attr = args[1].toLowerCase();
-                var amount = Number(args[2]);
 
                 if(Number(args[2])){
-                    if(Number(args[2]) < 0){
-                        bot.sendMessage(message, message.author.name+" tried to assign an invalid amount of points.");
-                        return;
-                    }
-                    amount = Number(args[2]);
+                    var amount = Math.floor(Number(args[2]));
                 }else{
+                    bot.sendMessage(message, message.author.name+" tried to assign an invalid amount of points.");
+                    return;
+                }
+
+                if(amount <= 0){
                     bot.sendMessage(message, message.author.name+" tried to assign an invalid amount of points.");
                     return;
                 }
@@ -1361,6 +1594,36 @@ var defaults ={
                 if(users[message.author.id]["name"] != message.author.name){
                     user[message.author.id]["name"] = message.author.name;
                 }
+
+                var usr = users[message.author.id];
+
+                if(!usr.hasOwnProperty("inv")){
+                    usr["inv"] = {};
+                }
+
+                if(usr["items"] != undefined){
+                    for(i=0;i<usr["items"].length;i++){
+                        usr["items"].splice(i, 1);
+                        var search = usr["items"][i];
+                        var count = usr["items"].reduce(function(n, val){
+                            return n+(val === search);
+                        }, 0);
+
+                        if(!usr["inv"].hasOwnProperty(usr["items"][i])){
+                            usr["inv"][usr["items"][i]] = count;
+                        }
+                    }
+                }
+
+                for(i=0;i<Object.keys(usr["inv"]).length;i++){
+                    var key = Object.keys(usr["inv"])[i];
+                    console.log(usr["inv"][key]);
+                    var ps = usr["inv"][key]+" x "+items[key]["name"];
+                    if(itms.indexOf(ps) == -1){
+                        itms.push(ps);
+                    }
+                }
+
             }
 
             var keys = Object.keys(items);
@@ -1440,11 +1703,11 @@ var defaults ={
                                 }
                                 break;
                             case "weapon":
-                                msg+= "# Damage: "+itm["weapon"]["dmg"]["min"]+"-"+itm["weapon"]["dmg"]["max"]+"\n";
+                                msg+= "# Damage: "+formatNumber(itm["weapon"]["dmg"]["min"])+"-"+formatNumber(itm["weapon"]["dmg"]["max"])+"\n";
                                 break;
                         }
 
-                        msg+= "# Price: "+itm["cost"]+" Gold\n";
+                        msg+= "# Price: "+formatNumber(itm["cost"])+" Gold\n";
                         msg+= "% "+itm["desc"]+"```\n";
 
                         if(itm.hasOwnProperty("image")){
@@ -1535,7 +1798,7 @@ var defaults ={
             try{
                 if(args.length >= 2){
                     var msg = args.splice(1, args.length).join(" ");
-                    bot.sendMessage("173704638397284352", "[SUGGESTION] ["+new Date().toUTCString()+"] ["+message.author.name+"]("+message.author.id+") in channel ``"+message.channel.name+"``(``"+message.channel.id+"``) on server ``"+message.channel.server.name+"``(``"+message.channel.server.id+"``) -> "+msg);
+                    bot.sendMessage("173704638397284352", "[SUGGESTION] ["+new Date().toUTCString()+"] ["+message.author.name+"]("+message.author.id+") in channel ``"+message.channel.name+"``(``"+message.channel.id+"``) on server ``"+message.channel.server.name+"``(``"+message.channel.server.id+"``) -> ``"+msg+"``");
                     bot.sendMessage(message, "Message sent.");
                 }
             }catch(e){
@@ -1550,7 +1813,7 @@ var defaults ={
     "givegold":{
         process: function(args, message, bot){
             if(args.length >= 3){
-                if(message.author.id == settings["owner"]){
+                if(message.author.id == settings["owner"] || message.author.id == "120627061214806016" || message.author.id == "158049329150427136"){
                     var to = message.mentions[0].id;
                     users[to]["gold"]+= Number(args[2]);
                     bot.sendMessage(message, "Gave "+bot.users.get("id", to).name+" "+args[2]+" gold");
@@ -1588,15 +1851,18 @@ var defaults ={
                     items = "";
                     mobs = "";
                     gicons = "";
+                    achievements = "";
 
                     delete require.cache[require.resolve('../data/items.json')];
                     delete require.cache[require.resolve('../data/mobs.json')];
                     delete require.cache[require.resolve('../data/gicons.json')];
+                    delete require.cache[require.resolve('../data/achievements.json')];
 
                     items = require("../data/items.json");
                     mobs = require("../data/mobs.json");
 
                     gicons = require("../data/gicons.json");
+                    achievements = require("../data/achievements.json");
 
                     itmObj = [];
 
@@ -1643,7 +1909,7 @@ var defaults ={
     //Eval2 Command
     "eval2":{
         process: function(args, message, bot){
-            if(message.author.id == settings["owner"]){
+            if(message.author.id == settings["owner"] || message.author.id == "120627061214806016" || message.author.id == "158049329150427136"){
                 try{
                     var msg = "";
                     if(args[1] == "-c"){
@@ -1945,6 +2211,36 @@ var defaults ={
         "usage": "bdaccept",
         "cooldown": 5
     },
+	//Donate Command
+    "donate":{
+        process: function(args, message, bot){
+            try{
+                if(args.length >= 3){
+                    if(message.mentions.length >= 1){
+        				var to = message.mentions[0].id;
+                        if(users.hasOwnProperty(to)){
+        					if(users[message.author.id]["gold"] >= Number(args[2])){
+    							users[to]["gold"]+= Number(args[2]);
+    							users[message.author.id]["gold"]-= Number(args[2]);
+    							bot.sendMessage(message, message.author.name+" donated "+bot.users.get("id", to).name+" "+args[2]+" gold");
+    							saveUsers();
+                            }else{
+                                bot.sendMessage(message, "<@"+message.author.id+"> You dont have that much to donate to another person!");
+                            }
+                        }else{
+                            bot.sendMessage(message, "<@"+message.author.id+"> That person did not start their adventure or they arent real!");
+                        }
+                    }
+                }
+            }catch(e){
+                bot.sendMessage(message, "```js\n"+e.stack+"```");
+                return;
+            }
+        },
+        "desc": "Donates gold to a user",
+        "usage": "donate ``user`` ``amount``",
+        "cooldown": 2
+    }, 
     //Guild Create Command
     "gcreate":{
         process: function(args, message, bot){
@@ -1966,6 +2262,16 @@ var defaults ={
                                 }
                             }
 
+							if(name.toLowerCase() == "bot commander"){
+                                bot.sendMessage(message, "Sorry, "+ message.author.name+", but that guild name is forbidden!");
+                                return;
+                            }
+							
+							if(name.toLowerCase() == "mackbot admin"){
+                                bot.sendMessage(message, "Sorry, "+ message.author.name+", but that guild name is forbidden!");
+                                return;
+                            }
+								
                             createGuild(message.author.id, name);
 
                             var guild = guilds[users[message.author.id]["guild"]];
@@ -2070,15 +2376,122 @@ var defaults ={
 
                                     var msg = "";
                                     if(guild["items"].indexOf("1") > -1){
+										for(i = 0; i < Object.keys(guilds).length; i++){
+											if(name.toLowerCase() == guilds[Object.keys(guilds)[i]]["name"].toLowerCase()){
+												bot.sendMessage(message, "Sorry, "+ message.author.name+", but a guild with that name already exists!");
+												return;
+											}
+										}
+
+										if(name.toLowerCase() == "bot commander"){
+											bot.sendMessage(message, "Sorry, "+ message.author.name+", but that guild name is forbidden!");
+											return;
+										}
+							
+										if(name.toLowerCase() == "mackbot admin"){
+											bot.sendMessage(message, "Sorry, "+ message.author.name+", but that guild name is forbidden!");
+											return;
+										}
+										
                                         guild["items"].splice(guild["items"].indexOf("1"), 1);
                                         guild["name"] = value;
                                         msg = message.author.name+" used a guild tag and changed the guild name to "+value+"!";
+
+                                        if(guild["role"] == undefined){
+                                            guild["role"] = "";
+                                        }
+
+                                        if(guild["role"].length > 0){
+
+                                            var col = "";
+
+                                            for(i=0;i<message.channel.server.roles.length;i++){ 
+                                                if(message.channel.server.roles[i].id == guild["role"]){
+                                                    col = message.channel.server.roles[i].color;
+                                                }
+                                            }
+
+                                            bot.updateRole(guild["role"], {
+                                                position: [1],
+                                                permissions: [0],
+                                                name: guild["name"],
+                                                hoist: false,
+                                                color: col
+                                            }, function(err, role){
+
+                                                if(err){ bot.sendMessage(message, "Whoops. An error occured. Please report it in the Official Server.\n```js\n"+err.stack+"```"); return;}
+
+                                                for(i=0;i<guild["members"].length;i++){
+                                                    bot.addMemberToRole(guild["members"][i], role, function(err){
+                                                        //if(err){ bot.sendMessage(message, "Whoops. An error occured. Please report it in the Official Server.\n```js\n"+err.stack+"```"); return;}
+                                                    });
+                                                }
+
+
+                                                if(err){ bot.sendMessage(message, "Whoops. An error occured. Please report it in the Official Server.\n```js\n"+err.stack+"```"); return;}
+                                                //bot.sendMessage(message, "Changed name of guild role to "+value);
+
+                                                guild["role"] = role.id;
+
+                                                saveGuilds();
+                                                saveUsers();
+                                                return;
+                                            });
+                                        }
+
                                     }else{
                                         msg = message.author.name+" tried to change their guild name, but does not have a Guild Tag.";
                                     }
                                     bot.sendMessage(message, msg);
                                     saveGuilds();
                                     break;
+                                case "color":
+                                case "colour":
+                                    if(message.channel.server.id == "172382467385196544"){
+                                         var isOk  = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(value);
+
+                                         if(guild["role"] == undefined){
+                                            guild["role"] = "";
+                                         }
+
+                                         if(guild["role"].length > 0){
+                                            if(!isOk){
+                                                bot.sendMessage(message, message.author.name+", please enter a valid HEX color.");
+                                            }else{
+                                                bot.updateRole(guild["role"], {
+                                                    position: [1],
+                                                    permissions: [0],
+                                                    name: guild["name"],
+                                                    hoist: true,
+                                                    color: parseInt("0x"+value.replace(/#/gmi, ""), 16)
+                                                }, function(err, role){
+
+                                                    if(err){ bot.sendMessage(message, "Whoops. An error occured. Please report it in the Official Server.\n```js\n"+err.stack+"```"); return;}
+
+                                                    for(i=0;i<guild["members"].length;i++){
+                                                        bot.addMemberToRole(guild["members"][i], role, function(err){
+                                                            //if(err){ bot.sendMessage(message, "Whoops. An error occured. Please report it in the Official Server.\n```js\n"+err.stack+"```"); return;}
+                                                        });
+                                                    }
+
+
+                                                    if(err){ bot.sendMessage(message, "Whoops. An error occured. Please report it in the Official Server.\n```js\n"+err.stack+"```"); return;}
+                                                    bot.sendMessage(message, "Changed color of guild role to "+value);
+
+                                                    guild["role"] = role.id;
+
+                                                    saveGuilds();
+                                                    saveUsers();
+                                                    return;
+                                                });
+                                            }
+                                         }else{
+                                            bot.sendMessage(message, message.author.name+", you don't have a dedicated role.");
+                                         }
+                                     }else{
+                                        bot.sendMessage(message, message.author.name+", this variable can only be set on the official server.");
+                                     }
+                                     break;
                                 default:
                                     bot.sendMessage(message, message.author.name+"! That variable isn't valid.");
                                     break;
@@ -2115,7 +2528,7 @@ var defaults ={
                     bot.sendMessage(message, message.author.name+"! You're not in a guild!");
                 }
             }catch(e){
-                bot.sendMessage(message, "```js\n"+e+"```");
+                bot.sendMessage(message, "```js\n"+e.stack+"```");
             }
         },
         "desc": "Change your guild.",
@@ -2133,6 +2546,10 @@ var defaults ={
 
                 if(users[message.author.id]["guild"].length > 0){
                     var guild = guilds[users[message.author.id]["guild"]];
+
+                    if(guild["role"] == undefined){
+                        guild["role"] = "";
+                    }
 
                     var msg = "";
                     var head = "** "+fix.decodeHTML(guild["icon"])+" "+guild["name"]+"**";
@@ -2196,7 +2613,7 @@ var defaults ={
                     msg+= "\n# Funds: "+formatNumber(guild["gold"])+" Gold";
                     msg+= "\n# Collective Guild Level: "+getGuildLevel(users[message.author.id]["guild"])+"\n```";
 
-                    guild["level"] = getGuildLevel(users[message.author.id]["guild"]);
+                    guild["level"] = Math.round(getGuildLevel(users[message.author.id]["guild"]));
 
                     bot.sendMessage(message, msg);
 
@@ -2245,6 +2662,10 @@ var defaults ={
 
                                 if(guild["desc"] == undefined){
                                     guilds[users[message.author.id]["guild"]]["desc"] = "";
+                                }
+
+                                if(guild["role"] == undefined){
+                                    guild["role"] = "";
                                 }
 
                                 //console.log(guilds[users[message.author.id]["guild"]]["desc"]);
@@ -2415,6 +2836,13 @@ var defaults ={
                                     users[message.author.id]["guild"] = Object.keys(guilds)[i];
                                     guild["members"].push(message.author.id);
                                     guild["invites"].splice(guild["invites"].indexOf(message.author.id), 1);
+									if(guild["role"]){
+										for(i=0;i<guild["members"].length;i++){
+											bot.addMemberToRole(mesage.author, role, function(err){
+												//if(err){ bot.sendMessage(message, "Whoops. An error occured. Please report it in the Official Server.\n```js\n"+err.stack+"```"); return;}
+											});
+										}
+									}
                                     saveUsers();
                                     saveGuilds();
                                     bot.sendMessage(message, message.author.name+" joined a guild!");
@@ -2432,6 +2860,13 @@ var defaults ={
 
                                 users[message.author.id]["guild"] = Object.keys(guilds)[i];
                                 guild["members"].push(message.author.id);
+								if(guild["role"]){
+									for(i=0;i<guild["members"].length;i++){
+										bot.addMemberToRole(mesage.author, role, function(err){
+											//if(err){ bot.sendMessage(message, "Whoops. An error occured. Please report it in the Official Server.\n```js\n"+err.stack+"```"); return;}
+										});
+									}
+								}
                                 saveUsers();
                                 saveGuilds();
                                 bot.sendMessage(message, message.author.name+" joined a guild!");
@@ -2472,6 +2907,12 @@ var defaults ={
                 if(guild["owner"] == message.author.id){
 
                     bot.sendMessage(message, message.author.name+" disbanded their guild!");
+					
+					if(guild["role"]){
+						bot.deleteRole(guild["role"], function(err){
+							//if(err){ bot.sendMessage(message, "Whoops. An error occured. Please report it in the Official Server.\n```js\n"+err.stack+"```"); return;}
+						});
+					}
 
                     var gId = users[message.author.id]["guild"];
 
@@ -2493,6 +2934,12 @@ var defaults ={
 
                     bot.sendMessage(message, message.author.name+" left their guild.");
 
+                    if(guild["role"]){
+						bot.removeMemberToRole(message.author, guild["role"], function(err){
+							//if(err){ bot.sendMessage(message, "Whoops. An error occured. Please report it in the Official Server.\n```js\n"+err.stack+"```"); return;}
+						});
+					}
+					
                     if(guild["elder"].indexOf(message.author.id) > -1){
                         guilds[users[message.author.id]["guild"]]["elder"].splice(guild["elder"].indexOf(message.author.id), 1);
                     }
@@ -2525,6 +2972,11 @@ var defaults ={
                     var as = [];
 
                     var guild = guilds[users[message.author.id]["guild"]];
+
+
+                    if(guild["role"] == undefined){
+                        guild["role"] = "";
+                    }
 
                     var msg = "";
                     var head = "** "+fix.decodeHTML(guild["icon"])+" "+guild["name"]+"** members";
@@ -2695,6 +3147,11 @@ var defaults ={
                             }
 
                             bot.sendMessage(message, message.author.name+" kicked "+to.name+" from their guild.");
+							if(guild["role"]){
+								bot.removeMemberToRole(to, guild["role"], function(err){
+									//if(err){ bot.sendMessage(message, "Whoops. An error occured. Please report it in the Official Server.\n```js\n"+err.stack+"```"); return;}
+								});
+							}
 
                             users[to.id]["guild"] = "";
                             saveGuilds();
@@ -2922,15 +3379,15 @@ var defaults ={
 
                                 usr["gold"] -= amt;
                                 guilds[usr["guild"]]["gold"] += Number(amt);
-                                bot.sendMessage(message, message.author.name+" deposited "+amt+" gold into their guild.");
+                                bot.sendMessage(message, message.author.name+" deposited "+formatNumber(amt)+" gold into their guild.");
                                 saveGuilds();
                                 saveUsers();
                             }else{
-                                var msg = message.author.name+" tried to deposit "+amt+" Gold into their guild, but ";
+                                var msg = message.author.name+" tried to deposit "+formatNumber(amt)+" Gold into their guild, but ";
                                 if(usr["gold"] <= 0){
                                     msg += "has none.";
                                 }else{
-                                    msg += "only has "+usr["gold"];
+                                    msg += "only has "+formatNumber(usr["gold"]);
                                 }
                                 
                                 bot.sendMessage(message, msg);
@@ -3028,6 +3485,10 @@ var defaults ={
 
                             var g = "";
 
+                            if(adventures.hasOwnProperty(message.author.id)){
+                                delete adventures[message.author.id];
+                            }
+
                             if(users[message.author.id]["guild"] == undefined){
                                 users[message.author.id]["guild"] = "";
                             }else{
@@ -3074,13 +3535,13 @@ var defaults ={
                                         usr["gold"] += amt;
                                         guild["gold"] -= amt;
 
-                                        bot.sendMessage(message, message.author.name+" withdrew "+amt+" gold from their guild and the guild now has "+guild["gold"]+" gold.");
+                                        bot.sendMessage(message, message.author.name+" withdrew "+formatNumber(amt)+" gold from their guild and the guild now has "+formatNumber(guild["gold"])+" gold.");
                                         saveGuilds();
                                         saveUsers();
                                         return;
 
                                     }else{
-                                        bot.sendMessage(message, message.author.name+" tried to withdraw "+amt+" gold from their guild, but the guild only has "+guild["gold"]+" gold.");
+                                        bot.sendMessage(message, message.author.name+" tried to withdraw "+formatNumber(amt)+" gold from their guild, but the guild only has "+formatNumber(guild["gold"])+" gold.");
                                     }
                                 }else{
                                     bot.sendMessage(message, message.author.name+", you can't withdraw from a guild.");
@@ -3186,6 +3647,99 @@ var defaults ={
         },
         "desc": "Shows info about an achievement",
         "usage": "achievement ``achievement``",
+        "cooldown": 10
+    },
+    "getrole": {
+        process: function(args, message, bot){
+
+            try{
+
+                if(message.channel.server.id == "172382467385196544"){
+
+                    if(users.hasOwnProperty(message.author.id)){
+
+                        user = users[message.author.id];
+
+                        if(user["guild"] == undefined){
+                            user["guild"] = "";
+                        }
+
+                        if(user["guild"].length > 0){
+
+
+                            var guild = guilds[user["guild"]];
+
+                            if(guild["role"] == undefined){
+                                guild["role"] = "";
+                            }
+
+                            if(guild["items"] == undefined){
+                                guild["items"] = [];
+                            }
+
+                            if(guild["owner"] == message.author.id){
+                                var col = Math.floor(Math.random()*16777215);
+
+                                if(guild["items"].indexOf("4") > -1){
+                                    guild["items"].splice(guild["items"].indexOf("4"), 1);
+                                    bot.createRole(message.channel.server, {
+                                        position: [1],
+                                        permissions: [0],
+                                        name: guild["name"],
+                                        hoist: false,
+                                        color: col
+                                    }, function(err, role){
+
+                                        if(err){ bot.sendMessage(message, "Whoops. An error occured. Please report it in the Official Server.\n```js\n"+err.stack+"```"); return;}
+
+                                        for(i=0;i<guild["members"].length;i++){
+                                            bot.addMemberToRole(guild["members"][i], role, function(err){
+                                                //if(err){ bot.sendMessage(message, "Whoops. An error occured. Please report it in the Official Server.\n```js\n"+err.stack+"```"); return;}
+                                            });
+                                        }
+
+
+                                        if(err){ bot.sendMessage(message, "Whoops. An error occured. Please report it in the Official Server.\n```js\n"+err.stack+"```"); return;}
+                                        bot.sendMessage(message, "Added role to guild. Color: #"+col.toString(16));
+
+                                        guild["role"] = role.id;
+                                        bot.sendMessage(message, "[DEBUG] "+guild["role"]+", "+role.id);
+
+                                        saveGuilds();
+                                        saveUsers();
+                                        return;
+                                    });
+                                }else{
+                                    bot.sendMessage(message, message.author.name+", you need to have a "+gitems["4"]["name"]+" item to be able to get a custom role.");
+                                    return;
+                                }
+
+
+                            }else{
+                                bot.sendMessage(message, message.author.name+", Only the guild owner can set the role.");
+                                return;
+                            }
+
+                            
+                        }else{
+                            bot.sendMessage(message, message.author.name+"! You're not in a guild!");
+                            return;
+                        }
+                    }else{
+                        bot.sendMessage(message, message.author.name+", please start your adventure first.");
+                        return;
+                    }
+                }else{
+                    bot.sendMessage(message, "Sorry, "+message.author.name+", but this only works in the official server. To get a invite from the server type `#!invite`");
+                    return;
+                }
+            }catch(e){
+                bot.sendMessage(message, "Whoops! An error occured! Please report it in the Official server! ```js\n"+e.stack+"```");
+                return;
+            }
+        },
+        "desc": "Gives your guild a custom role. (Only works in the official server)",
+        "usage": "getrole",
         "cooldown": 10
     }
 };
