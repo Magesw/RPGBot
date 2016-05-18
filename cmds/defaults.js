@@ -236,7 +236,7 @@ function adventure(args, message, bot){
         advLoose+= Math.floor(Math.sqrt(users[user]["stats"]["strength"]) * 0.25);
         userLoose -= Math.floor(Math.sqrt(users[user]["stats"]["defense"]) * 0.25);
 
-        if(userLoose < 0){
+        if(userLoose <= 0){
             userLoose = 1;
         }
 
